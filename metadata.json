@@ -1,0 +1,6 @@
+{
+  "name": "Controllo Presenze Congressi",
+  "description": "Sistema di tracciamento e controllo presenze per congressi tramite scansione codice a barre, gestione eventi, caricamento partecipanti da CSV ed esportazione report.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

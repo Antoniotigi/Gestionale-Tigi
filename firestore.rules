@@ -1,0 +1,96 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() <= 100;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function isOptionalString(data, key, maxLen) {
+      return !(key in data) || data[key] == null || (data[key] is string && data[key].size() <= maxLen);
+    }
+
+    function isOptionalNumber(data, key) {
+      return !(key in data) || data[key] == null || (data[key] is number);
+    }
+
+    // Event validation
+    function isValidEvent(data) {
+      return data.keys().hasAll(['id', 'title', 'startDate', 'endDate', 'status', 'createdAt'])
+        && data.keys().size() <= 13
+        && data.id is string && data.id.size() <= 100
+        && data.title is string && data.title.size() <= 1000
+        && data.startDate is string && data.startDate.size() <= 100
+        && data.endDate is string && data.endDate.size() <= 100
+        && data.status is string && (data.status == 'active' || data.status == 'completed' || data.status == 'draft')
+        && data.createdAt is string && data.createdAt.size() <= 100
+        && isOptionalString(data, 'description', 5000)
+        && isOptionalString(data, 'location', 1000)
+        && isOptionalString(data, 'image', 1048576)
+        && isOptionalNumber(data, 'durationHours')
+        && isOptionalNumber(data, 'minEcmHours')
+        && (!( 'dynamicFieldsConfig' in data ) || data.dynamicFieldsConfig == null || (data.dynamicFieldsConfig is list));
+    }
+
+    // Participant validation
+    function isValidParticipant(data) {
+      return data.keys().hasAll(['id', 'firstName', 'lastName'])
+        && data.keys().size() <= 12
+        && data.id is string && data.id.size() <= 100
+        && data.firstName is string && data.firstName.size() <= 200
+        && data.lastName is string && data.lastName.size() <= 200
+        && isOptionalString(data, 'email', 254)
+        && isOptionalString(data, 'company', 500)
+        && isOptionalString(data, 'notes', 1000)
+        && isOptionalString(data, 'phone', 50)
+        && isOptionalString(data, 'city', 200)
+        && isOptionalString(data, 'profession', 200)
+        && isOptionalString(data, 'discipline', 200)
+        && (!( 'dynamicFields' in data ) || data.dynamicFields == null || (data.dynamicFields is map));
+    }
+
+    // Attendance Log validation
+    function isValidAttendanceLog(data) {
+      return data.keys().hasAll(['id', 'eventId', 'participantId', 'checkInTime', 'status'])
+        && data.keys().size() <= 7
+        && data.id is string && data.id.size() <= 100
+        && data.eventId is string && data.eventId.size() <= 100
+        && data.participantId is string && data.participantId.size() <= 100
+        && data.checkInTime is string && data.checkInTime.size() <= 50
+        && data.status is string && (data.status == 'inside' || data.status == 'outside')
+        && isOptionalString(data, 'checkOutTime', 50)
+        && (!( 'totalMinutes' in data ) || data.totalMinutes == null || (data.totalMinutes is number && data.totalMinutes >= 0));
+    }
+
+    // Matched paths
+    match /events/{eventId} {
+      allow read: if true;
+      allow create: if isValidId(eventId) && isValidEvent(incoming());
+      allow update: if isValidEvent(incoming());
+      allow delete: if true;
+
+      match /participants/{participantId} {
+        allow read: if true;
+        allow create: if isValidId(participantId) && isValidParticipant(incoming());
+        allow update: if isValidParticipant(incoming());
+        allow delete: if true;
+      }
+
+      match /logs/{logId} {
+        allow read: if true;
+        allow create: if isValidId(logId) && isValidAttendanceLog(incoming());
+        allow update: if isValidAttendanceLog(incoming());
+        allow delete: if true;
+      }
+    }
+  }
+}

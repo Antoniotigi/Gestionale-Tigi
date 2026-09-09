@@ -1,0 +1,70 @@
+{
+  "entities": {
+    "Event": {
+      "title": "Event",
+      "description": "An event or congress",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 100 },
+        "title": { "type": "string", "maxLength": 1000 },
+        "startDate": { "type": "string", "maxLength": 100 },
+        "endDate": { "type": "string", "maxLength": 100 },
+        "description": { "type": "string", "maxLength": 5000 },
+        "location": { "type": "string", "maxLength": 1000 },
+        "status": { "type": "string", "enum": ["active", "completed", "draft"] },
+        "createdAt": { "type": "string", "maxLength": 100 },
+        "image": { "type": "string", "maxLength": 1048576 },
+        "durationHours": { "type": "number" },
+        "minEcmHours": { "type": "number" }
+      },
+      "required": ["id", "title", "startDate", "endDate", "status", "createdAt"]
+    },
+    "Participant": {
+      "title": "Participant",
+      "description": "An event participant",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 100 },
+        "firstName": { "type": "string", "maxLength": 200 },
+        "lastName": { "type": "string", "maxLength": 200 },
+        "email": { "type": "string", "maxLength": 254 },
+        "company": { "type": "string", "maxLength": 500 },
+        "notes": { "type": "string", "maxLength": 1000 },
+        "phone": { "type": "string", "maxLength": 50 },
+        "city": { "type": "string", "maxLength": 200 },
+        "profession": { "type": "string", "maxLength": 200 },
+        "discipline": { "type": "string", "maxLength": 200 }
+      },
+      "required": ["id", "firstName", "lastName"]
+    },
+    "AttendanceLog": {
+      "title": "AttendanceLog",
+      "description": "A participant check-in/out log",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 100 },
+        "eventId": { "type": "string", "maxLength": 100 },
+        "participantId": { "type": "string", "maxLength": 100 },
+        "checkInTime": { "type": "string", "maxLength": 50 },
+        "checkOutTime": { "type": "string", "maxLength": 50 },
+        "totalMinutes": { "type": "number" },
+        "status": { "type": "string", "enum": ["inside", "outside"] }
+      },
+      "required": ["id", "eventId", "participantId", "checkInTime", "status"]
+    }
+  },
+  "firestore": {
+    "events/{eventId}": {
+      "schema": "Event",
+      "description": "Collection of events and congresses"
+    },
+    "events/{eventId}/participants/{participantId}": {
+      "schema": "Participant",
+      "description": "Subcollection of participants assigned to a specific event"
+    },
+    "events/{eventId}/logs/{logId}": {
+      "schema": "AttendanceLog",
+      "description": "Subcollection of attendance check-in and check-out logs"
+    }
+  }
+}
