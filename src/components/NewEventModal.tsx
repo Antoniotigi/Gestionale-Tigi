@@ -72,6 +72,50 @@ const isInvalidItalianDate = (str: string): boolean => {
   return !/^(\d{1,2})[\.\/\-](\d{1,2})[\.\/\-](\d{4})$/.test(trimmed) && !/^\d{4}-\d{2}-\d{2}$/.test(trimmed);
 };
 
+const compressImage = (base64Str: string, maxWidth = 600, maxHeight = 450, quality = 0.75): Promise<string> => {
+  return new Promise((resolve) => {
+    if (!base64Str || !base64Str.startsWith('data:image/')) {
+      resolve(base64Str);
+      return;
+    }
+    const img = new Image();
+    img.src = base64Str;
+    img.onload = () => {
+      let width = img.width;
+      let height = img.height;
+      
+      if (width > height) {
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+      } else {
+        if (height > maxHeight) {
+          width = Math.round((width * maxHeight) / height);
+          height = maxHeight;
+        }
+      }
+      
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        resolve(base64Str);
+        return;
+      }
+      
+      ctx.drawImage(img, 0, 0, width, height);
+      const compressed = canvas.toDataURL('image/jpeg', quality);
+      resolve(compressed);
+    };
+    img.onerror = () => {
+      resolve(base64Str);
+    };
+  });
+};
+
 export default function NewEventModal({ isOpen, onClose, onSave }: NewEventModalProps) {
   const [title, setTitle] = useState('');
   const [startDate, setStartDate] = useState('');
@@ -104,9 +148,15 @@ export default function NewEventModal({ isOpen, onClose, onSave }: NewEventModal
       return;
     }
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       if (e.target?.result) {
-        setImage(e.target.result as string);
+        const rawBase64 = e.target.result as string;
+        try {
+          const compressed = await compressImage(rawBase64);
+          setImage(compressed);
+        } catch (err) {
+          setImage(rawBase64);
+        }
       }
     };
     reader.readAsDataURL(file);
@@ -288,22 +338,16 @@ export default function NewEventModal({ isOpen, onClose, onSave }: NewEventModal
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !startDate) return;
-
-    if (isInvalidItalianDate(startDate) || (endDate && isInvalidItalianDate(endDate))) {
-      alert("Inserisci le date nel formato corretto: GG.MM.AAAA (es. 08.09.2026)");
-      return;
-    }
 
     const parsedStart = parseItalianDate(startDate);
-    const parsedEnd = endDate ? parseItalianDate(endDate) : parsedStart;
+    const parsedEnd = endDate ? parseItalianDate(endDate) : '';
 
     if (inputMode === 'paste') {
       handlePasteProcess();
     }
 
     onSave({
-      title,
+      title: title.trim(),
       startDate: parsedStart,
       endDate: parsedEnd,
       description,
@@ -339,17 +383,17 @@ export default function NewEventModal({ isOpen, onClose, onSave }: NewEventModal
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
-      <div className="w-full max-w-2xl bg-white rounded-xl shadow-xl overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
+      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
         
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-          <h2 className="text-sm font-black text-slate-800 uppercase tracking-tight flex items-center gap-1.5">
-            <Sparkles className="text-emerald-700 animate-pulse" size={16} />
+          <h2 className="text-sm font-black text-[#1E293B] uppercase tracking-tight flex items-center gap-1.5">
+            <Sparkles className="text-[#2589F5] animate-pulse" size={16} />
             <span>Crea Nuovo Congresso</span>
           </h2>
           <button 
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 transition-colors p-1.5 rounded-lg hover:bg-slate-100"
+            className="text-slate-400 hover:text-slate-600 transition-colors p-1.5 rounded-full hover:bg-slate-100"
           >
             <X size={20} />
           </button>
@@ -359,31 +403,29 @@ export default function NewEventModal({ isOpen, onClose, onSave }: NewEventModal
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-5">
           
           {/* Base Info Section */}
-          <div className="space-y-3.5 bg-slate-50/40 border border-slate-150 p-4 rounded-xl">
-            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Informazioni Generali</h3>
+          <div className="space-y-3.5 bg-[#F4F7FB]/50 border border-[#E8F3FF]/50 p-4 rounded-2xl">
+            <h3 className="text-[10px] font-black text-[#64748B] uppercase tracking-wider">Informazioni Generali</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
               <div className="md:col-span-2">
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Titolo dell'Evento *</label>
+                <label className="block text-[10px] font-black text-[#64748B] uppercase tracking-wider mb-1">Titolo dell'Evento</label>
                 <input
                   type="text"
-                  required
                   placeholder="Es. 45° Congresso Nazionale di Cardiologia"
                   value={title}
                   onChange={e => setTitle(e.target.value)}
-                  className="w-full px-3 py-1.5 border border-slate-200 bg-white rounded-lg text-xs font-semibold focus:outline-hidden text-slate-800"
+                  className="w-full px-3.5 py-2 border border-slate-200 bg-white rounded-xl text-xs font-semibold focus:outline-hidden focus:border-[#2589F5] text-[#1E293B]"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Data Inizio *</label>
+                <label className="block text-[10px] font-black text-[#64748B] uppercase tracking-wider mb-1">Data Inizio</label>
                 <input
                   type="text"
-                  required
                   placeholder="GG.MM.AAAA"
                   value={startDate}
                   onChange={e => setStartDate(e.target.value)}
-                  className={`w-full px-3 py-1.5 border rounded-lg text-xs font-semibold focus:outline-hidden text-slate-800 bg-white transition-colors ${startDate && isInvalidItalianDate(startDate) ? 'border-red-400 focus:border-red-500' : 'border-slate-200'}`}
+                  className={`w-full px-3.5 py-2 border rounded-xl text-xs font-semibold focus:outline-hidden text-[#1E293B] bg-white transition-colors ${startDate && isInvalidItalianDate(startDate) ? 'border-red-400 focus:border-red-500' : 'border-slate-200 focus:border-[#2589F5]'}`}
                 />
                 {startDate && isInvalidItalianDate(startDate) && (
                   <span className="text-[9px] text-red-500 font-bold block mt-0.5">Formato richiesto: GG.MM.AAAA (es. 08.09.2026)</span>
@@ -391,13 +433,13 @@ export default function NewEventModal({ isOpen, onClose, onSave }: NewEventModal
               </div>
 
               <div>
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Data Fine (Opzionale)</label>
+                <label className="block text-[10px] font-black text-[#64748B] uppercase tracking-wider mb-1">Data Fine (Opzionale)</label>
                 <input
                   type="text"
                   placeholder="GG.MM.AAAA"
                   value={endDate}
                   onChange={e => setEndDate(e.target.value)}
-                  className={`w-full px-3 py-1.5 border rounded-lg text-xs font-semibold focus:outline-hidden text-slate-800 bg-white transition-colors ${endDate && isInvalidItalianDate(endDate) ? 'border-red-400 focus:border-red-500' : 'border-slate-200'}`}
+                  className={`w-full px-3.5 py-2 border rounded-xl text-xs font-semibold focus:outline-hidden text-[#1E293B] bg-white transition-colors ${endDate && isInvalidItalianDate(endDate) ? 'border-red-400 focus:border-red-500' : 'border-slate-200 focus:border-[#2589F5]'}`}
                 />
                 {endDate && isInvalidItalianDate(endDate) && (
                   <span className="text-[9px] text-red-500 font-bold block mt-0.5">Formato richiesto: GG.MM.AAAA (es. 10.09.2026)</span>
@@ -405,31 +447,31 @@ export default function NewEventModal({ isOpen, onClose, onSave }: NewEventModal
               </div>
 
               <div>
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Luogo / Sede</label>
+                <label className="block text-[10px] font-black text-[#64748B] uppercase tracking-wider mb-1">Luogo / Sede</label>
                 <input
                   type="text"
                   placeholder="Es. Centro Congressi Stella, Roma"
                   value={location}
                   onChange={e => setLocation(e.target.value)}
-                  className="w-full px-3 py-1.5 border border-slate-200 bg-white rounded-lg text-xs font-semibold focus:outline-hidden text-slate-800"
+                  className="w-full px-3.5 py-2 border border-slate-200 bg-white rounded-xl text-xs font-semibold focus:outline-hidden focus:border-[#2589F5] text-[#1E293B]"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Descrizione Breve</label>
+                <label className="block text-[10px] font-black text-[#64748B] uppercase tracking-wider mb-1">Descrizione Breve</label>
                 <input
                   type="text"
                   placeholder="Es. Focus sulle nuove frontiere tecnologiche"
                   value={description}
                   onChange={e => setDescription(e.target.value)}
-                  className="w-full px-3 py-1.5 border border-slate-200 bg-white rounded-lg text-xs font-semibold focus:outline-hidden text-slate-800"
+                  className="w-full px-3.5 py-2 border border-slate-200 bg-white rounded-xl text-xs font-semibold focus:outline-hidden focus:border-[#2589F5] text-[#1E293B]"
                 />
               </div>
 
               {/* ECM Hours & Duration */}
               <div className="md:col-span-2 pt-2 border-t border-slate-150 grid grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-1">
+                  <label className="block text-[10px] font-black text-[#64748B] uppercase tracking-wider mb-1 flex items-center gap-1">
                     <Clock size={11} className="text-slate-400" />
                     <span>Durata Evento (Ore)</span>
                   </label>
@@ -440,11 +482,11 @@ export default function NewEventModal({ isOpen, onClose, onSave }: NewEventModal
                     placeholder="Es: 12"
                     value={durationHours}
                     onChange={e => setDurationHours(e.target.value)}
-                    className="w-full px-3 py-1.5 border border-slate-200 bg-white rounded-lg text-xs font-semibold focus:outline-hidden text-slate-800"
+                    className="w-full px-3.5 py-2 border border-slate-200 bg-white rounded-xl text-xs font-semibold focus:outline-hidden focus:border-[#2589F5] text-[#1E293B]"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-1">
+                  <label className="block text-[10px] font-black text-[#64748B] uppercase tracking-wider mb-1 flex items-center gap-1">
                     <Award size={11} className="text-amber-600" />
                     <span>Presenza Minima ECM (Ore)</span>
                   </label>
@@ -455,16 +497,16 @@ export default function NewEventModal({ isOpen, onClose, onSave }: NewEventModal
                     placeholder="Es: 10"
                     value={minEcmHours}
                     onChange={e => setMinEcmHours(e.target.value)}
-                    className="w-full px-3 py-1.5 border border-slate-200 bg-white rounded-lg text-xs font-semibold focus:outline-hidden text-slate-800"
+                    className="w-full px-3.5 py-2 border border-slate-200 bg-white rounded-xl text-xs font-semibold focus:outline-hidden focus:border-[#2589F5] text-[#1E293B]"
                   />
                 </div>
               </div>
 
               <div className="md:col-span-2 border-t border-slate-150 pt-3.5 space-y-3">
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider">Foto di Anteprima (Copertina 16:11)</label>
+                <label className="block text-[10px] font-black text-[#64748B] uppercase tracking-wider">Foto di Anteprima (Copertina 16:11)</label>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* Photo Preview & Upload box */}
-                  <div className="md:col-span-1 aspect-[16/11] border border-slate-200 rounded-xl bg-slate-50 overflow-hidden relative group flex items-center justify-center">
+                  <div className="md:col-span-1 aspect-[16/11] border border-slate-200 rounded-2xl bg-slate-50 overflow-hidden relative group flex items-center justify-center">
                     {image ? (
                       <>
                         <img src={image} alt="Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
@@ -472,7 +514,7 @@ export default function NewEventModal({ isOpen, onClose, onSave }: NewEventModal
                           <button
                             type="button"
                             onClick={(e) => { e.preventDefault(); e.stopPropagation(); setImage(''); }}
-                            className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold rounded-lg cursor-pointer"
+                            className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold rounded-full cursor-pointer"
                           >
                             Rimuovi
                           </button>
@@ -508,7 +550,7 @@ export default function NewEventModal({ isOpen, onClose, onSave }: NewEventModal
                             type="button"
                             onClick={() => setImage(cover.url)}
                             title={cover.name}
-                            className="h-12 rounded-lg overflow-hidden border border-slate-200 hover:border-emerald-500 hover:scale-105 transition-all relative group cursor-pointer"
+                            className="h-12 rounded-xl overflow-hidden border border-slate-200 hover:border-[#2589F5] hover:scale-105 transition-all relative group cursor-pointer"
                           >
                             <img src={cover.url} alt={cover.name} className="w-full h-full object-cover" />
                             <span className="absolute inset-0 bg-black/10 group-hover:bg-transparent" />
@@ -522,7 +564,7 @@ export default function NewEventModal({ isOpen, onClose, onSave }: NewEventModal
                       placeholder="Incolla l'URL di un'immagine esterna..."
                       value={image.startsWith('data:') ? '' : image}
                       onChange={e => setImage(e.target.value)}
-                      className="w-full px-3 py-1.5 border border-slate-200 bg-white rounded-lg text-xs font-semibold focus:outline-hidden"
+                      className="w-full px-3.5 py-2 border border-slate-200 bg-white rounded-xl text-xs font-semibold focus:outline-hidden focus:border-[#2589F5]"
                     />
                   </div>
                 </div>
@@ -532,29 +574,29 @@ export default function NewEventModal({ isOpen, onClose, onSave }: NewEventModal
           </div>
 
           {/* Registrations Input Methods */}
-          <div className="space-y-3.5 bg-slate-50/40 border border-slate-150 p-4 rounded-xl">
+          <div className="space-y-3.5 bg-[#F4F7FB]/50 border border-[#E8F3FF]/50 p-4 rounded-2xl">
             <div className="flex items-center justify-between">
-              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Metodo Inserimento Iscritti</h3>
+              <h3 className="text-[10px] font-black text-[#64748B] uppercase tracking-wider">Metodo Inserimento Iscritti</h3>
               
-              <div className="flex gap-1.5 bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+              <div className="flex gap-1 bg-slate-100 p-1 rounded-full border border-slate-200/50">
                 <button
                   type="button"
                   onClick={() => setInputMode('demo')}
-                  className={`px-2.5 py-1 text-[9px] font-black uppercase rounded-md transition-all cursor-pointer ${inputMode === 'demo' ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}
+                  className={`px-3 py-1.5 text-[9px] font-black uppercase rounded-full transition-all cursor-pointer ${inputMode === 'demo' ? 'bg-white text-[#2589F5] shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}
                 >
                   Demo
                 </button>
                 <button
                   type="button"
                   onClick={() => setInputMode('excel')}
-                  className={`px-2.5 py-1 text-[9px] font-black uppercase rounded-md transition-all cursor-pointer ${inputMode === 'excel' ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}
+                  className={`px-3 py-1.5 text-[9px] font-black uppercase rounded-full transition-all cursor-pointer ${inputMode === 'excel' ? 'bg-white text-[#2589F5] shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}
                 >
                   Excel
                 </button>
                 <button
                   type="button"
                   onClick={() => setInputMode('paste')}
-                  className={`px-2.5 py-1 text-[9px] font-black uppercase rounded-md transition-all cursor-pointer ${inputMode === 'paste' ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}
+                  className={`px-3 py-1.5 text-[9px] font-black uppercase rounded-full transition-all cursor-pointer ${inputMode === 'paste' ? 'bg-white text-[#2589F5] shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}
                 >
                   Incolla
                 </button>
@@ -571,9 +613,9 @@ export default function NewEventModal({ isOpen, onClose, onSave }: NewEventModal
 
             {/* EXCEL import with deterministic processing */}
             {inputMode === 'excel' && (
-              <div className="bg-emerald-50/40 border border-emerald-150 rounded-xl p-3.5 space-y-3 shadow-2xs">
+              <div className="bg-[#E8F3FF]/50 border border-[#E8F3FF] rounded-2xl p-4 space-y-3 shadow-2xs">
                 <div className="space-y-1 text-[10px]">
-                  <p className="font-black text-emerald-855 uppercase tracking-wider">Carica Lista Iscritti tramite Excel</p>
+                  <p className="font-black text-[#2589F5] uppercase tracking-wider">Carica Lista Iscritti tramite Excel</p>
                   <p className="text-slate-600 font-medium">L'importatore rileva automaticamente le seguenti colonne (l'ordine non importa):</p>
                   <div className="flex flex-wrap gap-1 mt-1.5">
                     {['n.', 'Nome', 'Cognome', 'Email', 'Telefono', 'Città Lavoro', 'Ente di appartenenza', 'Professione', 'Disciplina'].map((col) => (
@@ -588,8 +630,8 @@ export default function NewEventModal({ isOpen, onClose, onSave }: NewEventModal
                   onDragLeave={handleDragLeave}
                   onDrop={handleDrop}
                   onClick={() => fileInputRef.current?.click()}
-                  className={`border border-dashed rounded-xl p-4 text-center cursor-pointer transition-all flex flex-col justify-center items-center ${
-                    isDragging ? 'border-emerald-500 bg-emerald-50/20' : 'border-slate-200 hover:border-slate-350 bg-white hover:bg-slate-50/50'
+                  className={`border border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all flex flex-col justify-center items-center ${
+                    isDragging ? 'border-[#2589F5] bg-[#E8F3FF]/30' : 'border-slate-200 hover:border-[#2589F5]/30 bg-white hover:bg-slate-50/50'
                   }`}
                 >
                   <input
@@ -599,19 +641,19 @@ export default function NewEventModal({ isOpen, onClose, onSave }: NewEventModal
                     accept=".xlsx, .xls"
                     className="hidden"
                   />
-                  <Upload className="text-emerald-700 mb-1" size={18} />
+                  <Upload className="text-[#2589F5] mb-1.5" size={20} />
                   <span className="text-[10px] font-bold text-slate-700">Trascina o Seleziona il file Excel (.xlsx, .xls)</span>
                   <span className="text-[8px] text-slate-400 mt-0.5">Verrà creata la lista iniziale degli iscritti</span>
                 </div>
 
                 {excelError && (
-                  <div className="p-2 bg-red-50 border border-red-100 text-red-700 text-[10px] rounded-lg font-semibold flex items-center gap-2">
+                  <div className="p-2 bg-red-50 border border-red-100 text-red-700 text-[10px] rounded-xl font-semibold flex items-center gap-2">
                     <AlertCircle size={12} />
                     <span>{excelError}</span>
                   </div>
                 )}
                 {excelSuccess && (
-                  <div className="p-2 bg-emerald-50 border border-emerald-100 text-emerald-800 text-[10px] rounded-lg font-semibold flex items-center gap-2">
+                  <div className="p-2 bg-[#E8F3FF] border border-[#E8F3FF] text-[#2589F5] text-[10px] rounded-xl font-semibold flex items-center gap-2">
                     <CheckCircle size={12} />
                     <span>{excelSuccess}</span>
                   </div>
@@ -629,7 +671,7 @@ export default function NewEventModal({ isOpen, onClose, onSave }: NewEventModal
                   value={pastedList}
                   onChange={e => setPastedList(e.target.value)}
                   onBlur={handlePasteProcess}
-                  className="w-full px-3 py-2 border border-slate-200 bg-white rounded-lg text-xs font-mono focus:outline-hidden"
+                  className="w-full px-3.5 py-2 border border-slate-200 bg-white rounded-xl text-xs font-mono focus:outline-hidden text-[#1E293B]"
                 />
                 <p className="text-[9px] text-slate-400 font-medium">Puoi incollare direttamente righe separate da punto e virgola (;) o tabulazioni.</p>
               </div>
@@ -637,9 +679,9 @@ export default function NewEventModal({ isOpen, onClose, onSave }: NewEventModal
 
             {/* Current loaded participants visual overview */}
             {participants.length > 0 && (
-              <div className="border border-slate-150 rounded-xl overflow-hidden bg-white shadow-2xs">
+              <div className="border border-slate-150 rounded-2xl overflow-hidden bg-white shadow-2xs">
                 <div className="px-3 py-1.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-                  <span className="text-[10px] font-black text-slate-500 uppercase">Iscritti Pronti per il Caricamento ({participants.length})</span>
+                  <span className="text-[10px] font-black text-[#64748B] uppercase">Iscritti Pronti per il Caricamento ({participants.length})</span>
                   <span className="text-[9px] font-semibold text-slate-400">Ordinati per ID</span>
                 </div>
                 <div className="max-h-28 overflow-y-auto divide-y divide-slate-100 p-1">
@@ -663,14 +705,13 @@ export default function NewEventModal({ isOpen, onClose, onSave }: NewEventModal
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-all cursor-pointer"
+              className="px-5 py-2.5 text-xs font-semibold text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-all border border-slate-200 cursor-pointer"
             >
               Annulla
             </button>
             <button
               type="submit"
-              disabled={!title.trim() || !startDate}
-              className="px-5 py-2 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 rounded-lg shadow-xs hover:shadow-sm transition-all cursor-pointer flex items-center gap-1.5"
+              className="px-6 py-2.5 text-xs font-bold text-white bg-gradient-to-r from-[#36D1DC] to-[#5B86E5] rounded-full shadow-[0_4px_12px_rgba(91,134,229,0.25)] hover:shadow-md transition-all cursor-pointer flex items-center gap-1.5 uppercase tracking-wider"
             >
               <CheckCircle size={12} />
               <span>Crea Evento</span>
@@ -678,7 +719,6 @@ export default function NewEventModal({ isOpen, onClose, onSave }: NewEventModal
           </div>
 
         </form>
-
       </div>
     </div>
   );

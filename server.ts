@@ -3,14 +3,91 @@ import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI, Type } from '@google/genai';
 import dotenv from 'dotenv';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import cookieParser from 'cookie-parser';
+import speakeasy from 'speakeasy';
+import QRCode from 'qrcode';
+import fs from 'fs';
 
 dotenv.config();
 
 const app = express();
 const PORT = 3000;
 
-// Middleware with limit for uploading moderately sized datasets
+// Enable cookie parser and JSON requests limit
+app.use(cookieParser());
 app.use(express.json({ limit: '10mb' }));
+
+// Secure credentials and MFA configuration storage (persisted at root)
+const AUTH_STORE_PATH = path.join(process.cwd(), 'auth-store.json');
+const JWT_SECRET = process.env.JWT_SECRET || 'tigicongress-super-secret-key-production-ready-2026';
+
+function initAuthStore() {
+  if (!fs.existsSync(AUTH_STORE_PATH)) {
+    const salt = bcrypt.genSaltSync(10);
+    // Hash password "Mappescio2026@" with 10 salt rounds (Industry standard production protection)
+    const passwordHash = bcrypt.hashSync('Mappescio2026@', salt);
+    const initialStore = {
+      username: 'tigicongress',
+      passwordHash,
+      mfaSecret: null,
+      mfaEnabled: false
+    };
+    fs.writeFileSync(AUTH_STORE_PATH, JSON.stringify(initialStore, null, 2), 'utf-8');
+    console.log('[Auth Store] Inizializzato credenziali predefinite in modo sicuro per "tigicongress".');
+  }
+}
+initAuthStore();
+
+function getAuthStore() {
+  return JSON.parse(fs.readFileSync(AUTH_STORE_PATH, 'utf-8'));
+}
+
+function updateAuthStore(data: any) {
+  fs.writeFileSync(AUTH_STORE_PATH, JSON.stringify(data, null, 2), 'utf-8');
+}
+
+// ----------------- SECURITY & RATE LIMITING MIDDLEWARE -----------------
+const loginAttempts = new Map<string, { count: number; lockUntil?: number }>();
+
+function rateLimiter(req: any, res: any, next: any) {
+  const ip = req.ip || req.headers['x-forwarded-for'] || 'unknown';
+  const attempt = loginAttempts.get(ip);
+  if (attempt && attempt.lockUntil && attempt.lockUntil > Date.now()) {
+    const minutesLeft = Math.ceil((attempt.lockUntil - Date.now()) / 60000);
+    return res.status(429).json({ error: `Troppi tentativi falliti. Riprova tra ${minutesLeft} minuti.` });
+  }
+  next();
+}
+
+function recordFailure(ip: string) {
+  const attempt = loginAttempts.get(ip) || { count: 0 };
+  attempt.count += 1;
+  if (attempt.count >= 5) {
+    attempt.lockUntil = Date.now() + 15 * 60 * 1000; // Lock for 15 minutes
+  }
+  loginAttempts.set(ip, attempt);
+}
+
+function recordSuccess(ip: string) {
+  loginAttempts.delete(ip);
+}
+
+// Session authentication gate for all analytical / protected backend endpoints
+function authenticateToken(req: any, res: any, next: any) {
+  const token = req.cookies.token;
+  if (!token) {
+    return res.status(401).json({ error: 'Accesso negato. Sessione scaduta o non autorizzata.' });
+  }
+  try {
+    const verified = jwt.verify(token, JWT_SECRET);
+    req.user = verified;
+    next();
+  } catch (err) {
+    return res.status(403).json({ error: 'Sessione non valida.' });
+  }
+}
 
 // Shared Gemini Client
 const ai = new GoogleGenAI({
@@ -122,7 +199,7 @@ function heuristicAnalyzeExcel(headers: string[], sampleData: any[]) {
 }
 
 // API endpoint for AI-powered Excel analysis
-app.post('/api/analyze-excel', async (req, res) => {
+app.post('/api/analyze-excel', authenticateToken, async (req, res) => {
   const { headers, sampleData } = req.body;
   
   if (!headers || !Array.isArray(headers) || headers.length === 0) {
@@ -251,6 +328,78 @@ Rispondi rigorosamente in formato JSON conformemente allo schema richiesto.`;
     const fallbackResult = heuristicAnalyzeExcel(headers, sampleData || []);
     res.json(fallbackResult);
   }
+});
+
+// ----------------- AUTHENTICATION & MFA ENDPOINTS -----------------
+
+// 1. POST /api/login (Username and Password credentials check - MFA Removed)
+app.post('/api/login', rateLimiter, async (req, res) => {
+  const { username, password } = req.body;
+  const ipHeader = req.headers['x-forwarded-for'];
+  const ip = req.ip || (Array.isArray(ipHeader) ? ipHeader[0] : ipHeader) || 'unknown';
+
+  if (!username || !password) {
+    return res.status(400).json({ error: 'Username e password richiesti.' });
+  }
+
+  try {
+    const store = getAuthStore();
+
+    if (username !== store.username || !bcrypt.compareSync(password, store.passwordHash)) {
+      recordFailure(ip);
+      return res.status(401).json({ error: 'Credenziali di accesso non valide.' });
+    }
+
+    // Reset brute force counter on successful credentials check
+    recordSuccess(ip);
+
+    // Issue authenticating JWT cookie directly (Secure, HttpOnly)
+    const finalToken = jwt.sign(
+      { username: store.username, role: 'admin' },
+      JWT_SECRET,
+      { expiresIn: '1d' }
+    );
+
+    res.cookie('token', finalToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none', // Required for AI Studio iframe preview environment
+      maxAge: 24 * 60 * 60 * 1000 // 1 day
+    });
+
+    return res.json({
+      status: 'authenticated',
+      username: store.username
+    });
+
+  } catch (err: any) {
+    return res.status(500).json({ error: 'Errore interno del server durante il login.' });
+  }
+});
+
+// 4. GET /api/check-session (Checks active login state on boot)
+app.get('/api/check-session', (req, res) => {
+  const token = req.cookies.token;
+  if (!token) {
+    return res.status(401).json({ authenticated: false });
+  }
+
+  try {
+    const verified = jwt.verify(token, JWT_SECRET);
+    return res.json({ authenticated: true, user: verified });
+  } catch (err) {
+    return res.status(401).json({ authenticated: false });
+  }
+});
+
+// 5. POST /api/logout (Destroys the session cookie securely)
+app.post('/api/logout', (req, res) => {
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none'
+  });
+  return res.json({ success: true });
 });
 
 // Serve Vite static/assets

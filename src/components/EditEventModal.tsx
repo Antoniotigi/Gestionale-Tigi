@@ -65,6 +65,50 @@ const isInvalidItalianDate = (str: string): boolean => {
   return !/^(\d{1,2})[\.\/\-](\d{1,2})[\.\/\-](\d{4})$/.test(trimmed) && !/^\d{4}-\d{2}-\d{2}$/.test(trimmed);
 };
 
+const compressImage = (base64Str: string, maxWidth = 600, maxHeight = 450, quality = 0.75): Promise<string> => {
+  return new Promise((resolve) => {
+    if (!base64Str || !base64Str.startsWith('data:image/')) {
+      resolve(base64Str);
+      return;
+    }
+    const img = new Image();
+    img.src = base64Str;
+    img.onload = () => {
+      let width = img.width;
+      let height = img.height;
+      
+      if (width > height) {
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+      } else {
+        if (height > maxHeight) {
+          width = Math.round((width * maxHeight) / height);
+          height = maxHeight;
+        }
+      }
+      
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        resolve(base64Str);
+        return;
+      }
+      
+      ctx.drawImage(img, 0, 0, width, height);
+      const compressed = canvas.toDataURL('image/jpeg', quality);
+      resolve(compressed);
+    };
+    img.onerror = () => {
+      resolve(base64Str);
+    };
+  });
+};
+
 export default function EditEventModal({ isOpen, onClose, event, participants: initialParticipants, onSave }: EditEventModalProps) {
   const [title, setTitle] = useState(event.title);
   const [startDate, setStartDate] = useState(formatItalianDate(event.startDate));
@@ -140,16 +184,22 @@ export default function EditEventModal({ isOpen, onClose, event, participants: i
 
   if (!isOpen) return null;
 
-  // Handle cover image upload & conversion to Base64
+  // Handle cover image upload & conversion to Base64 with compression
   const handleImageUpload = (file: File) => {
     if (!file.type.startsWith('image/')) {
       alert('Carica un file immagine valido (PNG, JPG, WebP).');
       return;
     }
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       if (e.target?.result) {
-        setCoverImage(e.target.result as string);
+        const rawBase64 = e.target.result as string;
+        try {
+          const compressed = await compressImage(rawBase64);
+          setCoverImage(compressed);
+        } catch (err) {
+          setCoverImage(rawBase64);
+        }
       }
     };
     reader.readAsDataURL(file);
@@ -463,15 +513,10 @@ export default function EditEventModal({ isOpen, onClose, event, participants: i
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !startDate) return;
 
-    if (isInvalidItalianDate(startDate) || (endDate && isInvalidItalianDate(endDate))) {
-      alert("Inserisci le date nel formato corretto: GG.MM.AAAA (es. 08.09.2026)");
-      return;
-    }
-
+    // Allow saving empty fields ("se manca qualche dato lascialo vuoto")
     const parsedStart = parseItalianDate(startDate);
-    const parsedEnd = endDate ? parseItalianDate(endDate) : parsedStart;
+    const parsedEnd = endDate ? parseItalianDate(endDate) : '';
 
     onSave({
       ...event,
@@ -499,20 +544,20 @@ export default function EditEventModal({ isOpen, onClose, event, participants: i
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 backdrop-blur-xs p-4">
-      <div className="w-full max-w-5xl bg-white rounded-xl shadow-2xl overflow-hidden border border-slate-100 flex flex-col h-[90vh]">
+      <div className="w-full max-w-5xl bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-100 flex flex-col h-[90vh]">
         
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
           <div>
-            <h2 className="text-base font-black text-slate-800 uppercase tracking-tight flex items-center gap-2">
-              <Sparkles className="text-emerald-700 animate-pulse" size={18} />
+            <h2 className="text-base font-black text-[#1E293B] uppercase tracking-tight flex items-center gap-2">
+              <Sparkles className="text-[#2589F5] animate-pulse" size={18} />
               <span>Modifica Congresso e Iscritti</span>
             </h2>
-            <p className="text-xs text-slate-400 font-semibold">Aggiorna le informazioni generali, imposta l'anteprima, configura l'ECM e gestisci i registrati</p>
+            <p className="text-xs text-[#64748B] font-semibold">Aggiorna le informazioni generali, imposta l'anteprima, configura l'ECM e gestisci i registrati</p>
           </div>
           <button 
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 transition-colors p-1.5 rounded-lg hover:bg-slate-100"
+            className="text-slate-400 hover:text-slate-600 transition-colors p-1.5 rounded-full hover:bg-slate-100"
           >
             <X size={20} />
           </button>
@@ -525,46 +570,44 @@ export default function EditEventModal({ isOpen, onClose, event, participants: i
           <div className="lg:col-span-5 space-y-5">
             
             {/* Event Info Card */}
-            <div className="bg-slate-50/60 border border-slate-150 rounded-xl p-4 space-y-4">
-              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1">
+            <div className="bg-[#F4F7FB]/50 border border-[#E8F3FF]/50 rounded-2xl p-4 space-y-4">
+              <h3 className="text-[10px] font-black text-[#64748B] uppercase tracking-wider flex items-center gap-1">
                 <span>Informazioni Generali</span>
               </h3>
               
               <div className="space-y-3">
                 <div>
-                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Titolo dell'Evento *</label>
+                  <label className="block text-[10px] font-black text-[#64748B] uppercase tracking-wider mb-1">Titolo dell'Evento</label>
                   <input
                     type="text"
-                    required
                     value={title}
                     onChange={e => setTitle(e.target.value)}
-                    className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-hidden focus:border-slate-400 transition-all text-slate-850 bg-white"
+                    className="w-full px-3.5 py-2 border border-slate-200 bg-white rounded-xl text-xs font-semibold focus:outline-hidden focus:border-[#2589F5] focus:ring-4 focus:ring-[#2589F5]/10 text-[#1E293B]"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Data Inizio *</label>
+                    <label className="block text-[10px] font-black text-[#64748B] uppercase tracking-wider mb-1">Data Inizio</label>
                     <input
                       type="text"
-                      required
                       placeholder="GG.MM.AAAA"
                       value={startDate}
                       onChange={e => setStartDate(e.target.value)}
-                      className={`w-full px-3 py-1.5 border rounded-lg text-xs font-semibold focus:outline-hidden focus:border-slate-400 transition-all text-slate-800 bg-white ${startDate && isInvalidItalianDate(startDate) ? 'border-red-400 focus:border-red-500' : 'border-slate-200'}`}
+                      className={`w-full px-3.5 py-2 border rounded-xl text-xs font-semibold focus:outline-hidden text-[#1E293B] bg-white transition-colors ${startDate && isInvalidItalianDate(startDate) ? 'border-red-400 focus:border-red-500' : 'border-slate-200 focus:border-[#2589F5]'}`}
                     />
                     {startDate && isInvalidItalianDate(startDate) && (
                       <span className="text-[9px] text-red-500 font-bold block mt-0.5">Formato: GG.MM.AAAA</span>
                     )}
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Data Fine</label>
+                    <label className="block text-[10px] font-black text-[#64748B] uppercase tracking-wider mb-1">Data Fine</label>
                     <input
                       type="text"
                       placeholder="GG.MM.AAAA"
                       value={endDate}
                       onChange={e => setEndDate(e.target.value)}
-                      className={`w-full px-3 py-1.5 border rounded-lg text-xs font-semibold focus:outline-hidden focus:border-slate-400 transition-all text-slate-800 bg-white ${endDate && isInvalidItalianDate(endDate) ? 'border-red-400 focus:border-red-500' : 'border-slate-200'}`}
+                      className={`w-full px-3.5 py-2 border rounded-xl text-xs font-semibold focus:outline-hidden text-[#1E293B] bg-white transition-colors ${endDate && isInvalidItalianDate(endDate) ? 'border-red-400 focus:border-red-500' : 'border-slate-200 focus:border-[#2589F5]'}`}
                     />
                     {endDate && isInvalidItalianDate(endDate) && (
                       <span className="text-[9px] text-red-500 font-bold block mt-0.5">Formato: GG.MM.AAAA</span>
@@ -574,21 +617,21 @@ export default function EditEventModal({ isOpen, onClose, event, participants: i
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Luogo / Sede</label>
+                    <label className="block text-[10px] font-black text-[#64748B] uppercase tracking-wider mb-1">Luogo / Sede</label>
                     <input
                       type="text"
                       value={location}
                       onChange={e => setLocation(e.target.value)}
-                      className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-hidden focus:border-slate-400 transition-all text-slate-800 bg-white"
+                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-hidden focus:border-[#2589F5] text-[#1E293B] bg-white"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Descrizione Breve</label>
+                    <label className="block text-[10px] font-black text-[#64748B] uppercase tracking-wider mb-1">Descrizione Breve</label>
                     <input
                       type="text"
                       value={description}
                       onChange={e => setDescription(e.target.value)}
-                      className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-hidden focus:border-slate-400 transition-all text-slate-800 bg-white"
+                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-hidden focus:border-[#2589F5] text-[#1E293B] bg-white"
                     />
                   </div>
                 </div>
@@ -596,7 +639,7 @@ export default function EditEventModal({ isOpen, onClose, event, participants: i
                 {/* ECM and Duration details */}
                 <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-150">
                   <div>
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-1">
+                    <label className="block text-[10px] font-black text-[#64748B] uppercase tracking-wider mb-1 flex items-center gap-1">
                       <Clock size={11} className="text-slate-400" />
                       <span>Durata Evento (Ore)</span>
                     </label>
@@ -607,11 +650,11 @@ export default function EditEventModal({ isOpen, onClose, event, participants: i
                       placeholder="Es: 12"
                       value={durationHours}
                       onChange={e => setDurationHours(e.target.value)}
-                      className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-hidden focus:border-slate-400 transition-all text-slate-800 bg-white"
+                      className="w-full px-3.5 py-2 border border-slate-200 bg-white rounded-xl text-xs font-semibold focus:outline-hidden focus:border-[#2589F5] text-[#1E293B]"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-1">
+                    <label className="block text-[10px] font-black text-[#64748B] uppercase tracking-wider mb-1 flex items-center gap-1">
                       <Award size={11} className="text-amber-600" />
                       <span>Presenza Minima ECM (Ore)</span>
                     </label>
@@ -622,7 +665,7 @@ export default function EditEventModal({ isOpen, onClose, event, participants: i
                       placeholder="Es: 10"
                       value={minEcmHours}
                       onChange={e => setMinEcmHours(e.target.value)}
-                      className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-hidden focus:border-slate-400 transition-all text-slate-800 bg-white"
+                      className="w-full px-3.5 py-2 border border-slate-200 bg-white rounded-xl text-xs font-semibold focus:outline-hidden focus:border-[#2589F5] text-[#1E293B]"
                     />
                   </div>
                 </div>
@@ -631,11 +674,11 @@ export default function EditEventModal({ isOpen, onClose, event, participants: i
             </div>
 
             {/* Photo Preview & Selection */}
-            <div className="bg-slate-50/60 border border-slate-150 rounded-xl p-4 space-y-3">
-              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider">Foto di Anteprima (Copertina 16:11)</label>
+            <div className="bg-[#F4F7FB]/50 border border-[#E8F3FF]/50 rounded-2xl p-4 space-y-3">
+              <label className="block text-[10px] font-black text-[#64748B] uppercase tracking-wider">Foto di Anteprima (Copertina 16:11)</label>
               
               {coverImage ? (
-                <div className="relative aspect-[16/11] rounded-xl overflow-hidden border border-slate-200 group">
+                <div className="relative aspect-[16/11] rounded-2xl overflow-hidden border border-slate-200 group">
                   <img 
                     src={coverImage} 
                     alt="Anteprima" 
@@ -646,14 +689,14 @@ export default function EditEventModal({ isOpen, onClose, event, participants: i
                     <button
                       type="button"
                       onClick={() => setCoverImage('')}
-                      className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold rounded-lg cursor-pointer"
+                      className="px-3.5 py-1.5 bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold rounded-full cursor-pointer"
                     >
                       Rimuovi Foto
                     </button>
                   </div>
                 </div>
               ) : (
-                <div className="aspect-[16/11] border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50 flex flex-col items-center justify-center text-center p-4">
+                <div className="aspect-[16/11] border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50 flex flex-col items-center justify-center text-center p-4">
                   <ImageIcon className="text-slate-400 mb-1" size={24} />
                   <span className="text-[11px] font-bold text-slate-700">Nessuna foto impostata</span>
                   <span className="text-[9px] text-slate-400">Verrà mostrato il gradiente predefinito</span>
@@ -665,7 +708,7 @@ export default function EditEventModal({ isOpen, onClose, event, participants: i
                   <button
                     type="button"
                     onClick={() => imageInputRef.current?.click()}
-                    className="flex-1 py-1.5 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold rounded-lg text-[10px] text-center cursor-pointer transition-colors"
+                    className="flex-1 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold rounded-full text-[10px] text-center cursor-pointer transition-colors"
                   >
                     Carica Foto
                   </button>
@@ -681,7 +724,7 @@ export default function EditEventModal({ isOpen, onClose, event, participants: i
                     type="text"
                     placeholder="Incolla URL immagine..."
                     onChange={e => setCoverImage(e.target.value)}
-                    className="flex-1 px-2.5 py-1.5 border border-slate-200 bg-white rounded-lg text-[10px] focus:outline-hidden"
+                    className="flex-1 px-3 py-2 border border-slate-200 bg-white rounded-xl text-[10px] focus:outline-hidden focus:border-[#2589F5]"
                   />
                 </div>
 
@@ -695,7 +738,7 @@ export default function EditEventModal({ isOpen, onClose, event, participants: i
                         type="button"
                         onClick={() => setCoverImage(cover.url)}
                         title={cover.name}
-                        className="h-9 rounded-md overflow-hidden border border-slate-200 hover:border-emerald-500 hover:scale-105 transition-all relative group cursor-pointer"
+                        className="h-9 rounded-xl overflow-hidden border border-slate-200 hover:border-[#2589F5] hover:scale-105 transition-all relative group cursor-pointer"
                       >
                         <img src={cover.url} alt={cover.name} className="w-full h-full object-cover" />
                         <span className="absolute inset-0 bg-black/20 group-hover:bg-transparent" />
@@ -711,17 +754,17 @@ export default function EditEventModal({ isOpen, onClose, event, participants: i
           <div className="lg:col-span-7 flex flex-col h-full min-h-0 space-y-4">
             
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-black text-slate-400 uppercase tracking-wider">
+              <h3 className="text-xs font-black text-[#1E293B] uppercase tracking-wider">
                 Gestione Lista Iscritti ({participants.length})
               </h3>
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => setShowAddManual(!showAddManual)}
-                  className={`text-[10px] font-bold px-2 py-1 border rounded-lg flex items-center gap-1 cursor-pointer transition-colors ${
+                  className={`text-[10px] font-bold px-3.5 py-1.5 border rounded-full flex items-center gap-1 cursor-pointer transition-colors ${
                     showAddManual 
                       ? 'bg-slate-100 text-slate-700 border-slate-300' 
-                      : 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
+                      : 'bg-[#E8F3FF] text-[#2589F5] border-[#E8F3FF] hover:bg-[#E8F3FF]/80'
                   }`}
                 >
                   <Plus size={12} />
@@ -735,7 +778,7 @@ export default function EditEventModal({ isOpen, onClose, event, participants: i
                       setExcelSuccess("Elenco iscritti svuotato con successo! Fai clic su 'Salva Modifiche' per confermare.");
                     }
                   }}
-                  className="text-[10px] font-bold text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200 rounded-lg px-2 py-1 flex items-center gap-1 cursor-pointer transition-colors"
+                  className="text-[10px] font-bold text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200 rounded-full px-3.5 py-1.5 flex items-center gap-1 cursor-pointer transition-colors"
                 >
                   <Trash2 size={12} />
                   <span>Svuota Elenco</span>
@@ -745,8 +788,8 @@ export default function EditEventModal({ isOpen, onClose, event, participants: i
 
             {/* Sub-section 1: Add individual registered person */}
             {showAddManual && (
-              <form onSubmit={handleAddParticipant} className="bg-slate-50 border border-slate-150 rounded-xl p-3 space-y-2.5 shadow-2xs">
-                <span className="block text-[9px] font-black text-slate-500 uppercase tracking-wider">Aggiungi Singolo Nominativo</span>
+              <form onSubmit={handleAddParticipant} className="bg-[#F4F7FB]/50 border border-[#E8F3FF]/50 rounded-2xl p-4 space-y-2.5 shadow-2xs">
+                <span className="block text-[9px] font-black text-[#64748B] uppercase tracking-wider">Aggiungi Singolo Nominativo</span>
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
                   <input
                     type="text"
@@ -754,7 +797,7 @@ export default function EditEventModal({ isOpen, onClose, event, participants: i
                     required
                     value={newId}
                     onChange={e => setNewId(e.target.value)}
-                    className="px-2 py-1.5 border border-slate-200 rounded-lg text-xs font-mono focus:outline-hidden md:col-span-2 uppercase bg-white"
+                    className="px-3 py-2 border border-slate-200 rounded-xl text-xs font-mono focus:outline-hidden focus:border-[#2589F5] md:col-span-2 uppercase bg-white text-[#1E293B]"
                   />
                   <input
                     type="text"
@@ -762,7 +805,7 @@ export default function EditEventModal({ isOpen, onClose, event, participants: i
                     required
                     value={newFirstName}
                     onChange={e => setNewFirstName(e.target.value)}
-                    className="px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:outline-hidden bg-white"
+                    className="px-3 py-2 border border-slate-200 rounded-xl text-xs focus:outline-hidden focus:border-[#2589F5] bg-white text-[#1E293B]"
                   />
                   <input
                     type="text"
@@ -770,11 +813,11 @@ export default function EditEventModal({ isOpen, onClose, event, participants: i
                     required
                     value={newLastName}
                     onChange={e => setNewLastName(e.target.value)}
-                    className="px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:outline-hidden bg-white"
+                    className="px-3 py-2 border border-slate-200 rounded-xl text-xs focus:outline-hidden focus:border-[#2589F5] bg-white text-[#1E293B]"
                   />
                   <button
                     type="submit"
-                    className="bg-emerald-750 hover:bg-emerald-850 text-white font-bold text-xs rounded-lg px-2 py-1.5 flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                    className="bg-gradient-to-r from-[#36D1DC] to-[#5B86E5] text-white font-bold text-xs rounded-full px-4 py-2 flex items-center justify-center gap-1 cursor-pointer transition-colors"
                   >
                     <Plus size={12} />
                     <span>Aggiungi</span>
@@ -787,42 +830,42 @@ export default function EditEventModal({ isOpen, onClose, event, participants: i
                     placeholder="Ente / Azienda"
                     value={newCompany}
                     onChange={e => setNewCompany(e.target.value)}
-                    className="px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:outline-hidden bg-white"
+                    className="px-3 py-2 border border-slate-200 rounded-xl text-xs focus:outline-hidden focus:border-[#2589F5] bg-white text-[#1E293B]"
                   />
                   <input
                     type="email"
                     placeholder="Email"
                     value={newEmail}
                     onChange={e => setNewEmail(e.target.value)}
-                    className="px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:outline-hidden bg-white"
+                    className="px-3 py-2 border border-slate-200 rounded-xl text-xs focus:outline-hidden focus:border-[#2589F5] bg-white text-[#1E293B]"
                   />
                   <input
                     type="text"
                     placeholder="Telefono"
                     value={newPhone}
                     onChange={e => setNewPhone(e.target.value)}
-                    className="px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:outline-hidden bg-white"
+                    className="px-3 py-2 border border-slate-200 rounded-xl text-xs focus:outline-hidden focus:border-[#2589F5] bg-white text-[#1E293B]"
                   />
                   <input
                     type="text"
                     placeholder="Città Lavoro"
                     value={newCity}
                     onChange={e => setNewCity(e.target.value)}
-                    className="px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:outline-hidden bg-white"
+                    className="px-3 py-2 border border-slate-200 rounded-xl text-xs focus:outline-hidden focus:border-[#2589F5] bg-white text-[#1E293B]"
                   />
                   <input
                     type="text"
                     placeholder="Professione"
                     value={newProfession}
                     onChange={e => setNewProfession(e.target.value)}
-                    className="px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:outline-hidden bg-white"
+                    className="px-3 py-2 border border-slate-200 rounded-xl text-xs focus:outline-hidden focus:border-[#2589F5] bg-white text-[#1E293B]"
                   />
                   <input
                     type="text"
                     placeholder="Disciplina"
                     value={newDiscipline}
                     onChange={e => setNewDiscipline(e.target.value)}
-                    className="px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:outline-hidden bg-white"
+                    className="px-3 py-2 border border-slate-200 rounded-xl text-xs focus:outline-hidden focus:border-[#2589F5] bg-white text-[#1E293B]"
                   />
                 </div>
 
@@ -851,11 +894,11 @@ export default function EditEventModal({ isOpen, onClose, event, participants: i
             )}
 
             {/* Sub-section 2: Integrated Excel Bulk Import Area */}
-            <div className="bg-emerald-50/40 border border-emerald-150 rounded-xl p-3.5 space-y-3 shadow-2xs">
+            <div className="bg-[#E8F3FF]/50 border border-[#E8F3FF] rounded-2xl p-4 space-y-3 shadow-2xs">
               <div className="space-y-1 text-[10px]">
-                <p className="font-black text-emerald-850 uppercase tracking-wider">Carica Lista Iscritti tramite Excel</p>
-                <p className="text-slate-600 font-medium">L'importatore rileva automaticamente le seguenti colonne (l'ordine non importa):</p>
-                <div className="flex flex-wrap gap-1 my-1.5">
+                <p className="font-black text-[#2589F5] uppercase tracking-wider">Carica Lista Iscritti tramite Excel</p>
+                <p className="text-[#64748B] font-medium">L'importatore rileva automaticamente le seguenti colonne (l'ordine non importa):</p>
+                <div className="flex flex-wrap gap-1 mt-1.5">
                   {['n.', 'Nome', 'Cognome', 'Email', 'Telefono', 'Città Lavoro', 'Ente di appartenenza', 'Professione', 'Disciplina'].map((col) => (
                     <span key={col} className="bg-white border border-slate-200 px-1.5 py-0.5 rounded font-mono font-bold text-slate-700 shadow-3xs">{col}</span>
                   ))}
@@ -868,8 +911,8 @@ export default function EditEventModal({ isOpen, onClose, event, participants: i
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
-                className={`border border-dashed rounded-xl p-4 text-center cursor-pointer transition-all flex flex-col justify-center items-center ${
-                  isDragging ? 'border-emerald-500 bg-emerald-50/20' : 'border-slate-200 hover:border-slate-350 bg-white hover:bg-slate-50/50'
+                className={`border border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all flex flex-col justify-center items-center ${
+                  isDragging ? 'border-[#2589F5] bg-[#E8F3FF]/30' : 'border-slate-200 hover:border-[#2589F5]/30 bg-white hover:bg-slate-50/50'
                 }`}
               >
                 <input
@@ -879,27 +922,27 @@ export default function EditEventModal({ isOpen, onClose, event, participants: i
                   accept=".xlsx, .xls"
                   className="hidden"
                 />
-                <Upload className="text-emerald-700 mb-1" size={18} />
+                <Upload className="text-[#2589F5] mb-1.5" size={20} />
                 <span className="text-[10px] font-bold text-slate-700">Trascina o Seleziona il file Excel (.xlsx, .xls)</span>
                 <span className="text-[8px] text-slate-400 mt-0.5">La lista verrà unita a quella esistente preservando gli ID</span>
               </div>
             </div>
 
             {excelError && (
-              <div className="p-2 bg-red-50 border border-red-100 text-red-700 text-[10px] rounded-lg font-semibold flex items-center gap-2">
+              <div className="p-2 bg-red-50 border border-red-100 text-red-700 text-[10px] rounded-xl font-semibold flex items-center gap-2">
                 <AlertCircle size={12} />
                 <span>{excelError}</span>
               </div>
             )}
             {excelSuccess && (
-              <div className="p-2 bg-emerald-50 border border-emerald-100 text-emerald-800 text-[10px] rounded-lg font-semibold flex items-center gap-2">
+              <div className="p-2 bg-[#E8F3FF] border border-[#E8F3FF] text-[#2589F5] text-[10px] rounded-xl font-semibold flex items-center gap-2">
                 <CheckCircle size={12} />
                 <span>{excelSuccess}</span>
               </div>
             )}
 
             {/* Sub-section 3: Search and Registered List Table */}
-            <div className="flex-1 flex flex-col min-h-0 border border-slate-150 rounded-xl overflow-hidden bg-white shadow-2xs">
+            <div className="flex-1 flex flex-col min-h-0 border border-slate-150 rounded-2xl overflow-hidden bg-white shadow-2xs">
               
               {/* List Search Bar */}
               <div className="p-2 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
@@ -989,15 +1032,14 @@ export default function EditEventModal({ isOpen, onClose, event, participants: i
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm font-semibold text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-all cursor-pointer"
+            className="px-5 py-2.5 text-xs font-semibold text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-all border border-slate-200 cursor-pointer"
           >
             Chiudi ed Annulla
           </button>
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={!title.trim() || !startDate}
-            className="px-5 py-2 text-sm font-semibold text-white bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center gap-1.5"
+            className="px-6 py-2.5 text-xs font-bold text-white bg-gradient-to-r from-[#36D1DC] to-[#5B86E5] rounded-full shadow-[0_4px_12px_rgba(91,134,229,0.25)] hover:shadow-md transition-all cursor-pointer flex items-center gap-1.5 uppercase tracking-wider"
           >
             <span>Salva Modifiche</span>
           </button>
@@ -1008,23 +1050,23 @@ export default function EditEventModal({ isOpen, onClose, event, participants: i
       {/* SUB-MODAL: Modifica Anagrafica Partecipante (Standard & Dynamic Extra columns) */}
       {editingParticipant && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
-          <div className="w-full max-w-md bg-white rounded-xl shadow-2xl border border-slate-150 overflow-hidden flex flex-col max-h-[90vh]">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-150 overflow-hidden flex flex-col max-h-[90vh]">
             
             <div className="flex items-center justify-between px-5 py-3.5 bg-slate-50 border-b border-slate-150">
               <div className="flex items-center gap-2">
-                <Edit3 size={14} className="text-indigo-600" />
-                <h3 className="text-xs font-black text-slate-800 uppercase tracking-tight">Modifica Anagrafica Partecipante</h3>
+                <Edit3 size={14} className="text-[#2589F5]" />
+                <h3 className="text-xs font-black text-[#1E293B] uppercase tracking-tight">Modifica Anagrafica Partecipante</h3>
               </div>
               <button 
                 type="button"
                 onClick={() => setEditingParticipant(null)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-full"
               >
                 <X size={16} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveParticipantEdit} className="p-5 space-y-4 overflow-y-auto">
+            <form onSubmit={handleSaveParticipantEdit} className="p-5 space-y-4 overflow-y-auto text-xs font-semibold text-[#64748B]">
               
               <div className="space-y-3">
                 <div>
@@ -1034,7 +1076,7 @@ export default function EditEventModal({ isOpen, onClose, event, participants: i
                     required
                     value={editId}
                     onChange={e => setEditId(e.target.value)}
-                    className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-mono uppercase bg-slate-50"
+                    className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs font-mono uppercase bg-slate-50 text-[#1E293B]"
                   />
                 </div>
 
@@ -1046,7 +1088,7 @@ export default function EditEventModal({ isOpen, onClose, event, participants: i
                       required
                       value={editFirstName}
                       onChange={e => setEditFirstName(e.target.value)}
-                      className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold"
+                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-[#1E293B] bg-white focus:outline-hidden focus:border-[#2589F5]"
                     />
                   </div>
                   <div>
@@ -1056,7 +1098,7 @@ export default function EditEventModal({ isOpen, onClose, event, participants: i
                       required
                       value={editLastName}
                       onChange={e => setEditLastName(e.target.value)}
-                      className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold"
+                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-[#1E293B] bg-white focus:outline-hidden focus:border-[#2589F5]"
                     />
                   </div>
                 </div>
@@ -1068,7 +1110,7 @@ export default function EditEventModal({ isOpen, onClose, event, participants: i
                       type="text"
                       value={editCompany}
                       onChange={e => setEditCompany(e.target.value)}
-                      className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold"
+                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-[#1E293B] bg-white focus:outline-hidden focus:border-[#2589F5]"
                     />
                   </div>
                   <div>
@@ -1077,7 +1119,7 @@ export default function EditEventModal({ isOpen, onClose, event, participants: i
                       type="email"
                       value={editEmail}
                       onChange={e => setEditEmail(e.target.value)}
-                      className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold"
+                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-[#1E293B] bg-white focus:outline-hidden focus:border-[#2589F5]"
                     />
                   </div>
                 </div>
@@ -1089,7 +1131,7 @@ export default function EditEventModal({ isOpen, onClose, event, participants: i
                       type="text"
                       value={editPhone}
                       onChange={e => setEditPhone(e.target.value)}
-                      className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold"
+                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-[#1E293B] bg-white focus:outline-hidden focus:border-[#2589F5]"
                     />
                   </div>
                   <div>
@@ -1098,7 +1140,7 @@ export default function EditEventModal({ isOpen, onClose, event, participants: i
                       type="text"
                       value={editCity}
                       onChange={e => setEditCity(e.target.value)}
-                      className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold"
+                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-[#1E293B] bg-white focus:outline-hidden focus:border-[#2589F5]"
                     />
                   </div>
                 </div>
@@ -1110,7 +1152,7 @@ export default function EditEventModal({ isOpen, onClose, event, participants: i
                       type="text"
                       value={editProfession}
                       onChange={e => setEditProfession(e.target.value)}
-                      className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold"
+                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-[#1E293B] bg-white focus:outline-hidden focus:border-[#2589F5]"
                     />
                   </div>
                   <div>
@@ -1119,7 +1161,7 @@ export default function EditEventModal({ isOpen, onClose, event, participants: i
                       type="text"
                       value={editDiscipline}
                       onChange={e => setEditDiscipline(e.target.value)}
-                      className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold"
+                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-[#1E293B] bg-white focus:outline-hidden focus:border-[#2589F5]"
                     />
                   </div>
                 </div>
@@ -1129,17 +1171,17 @@ export default function EditEventModal({ isOpen, onClose, event, participants: i
                 <p className="text-[10px] text-red-600 font-semibold">{editError}</p>
               )}
 
-              <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2">
+              <div className="pt-4 border-t border-slate-150 flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setEditingParticipant(null)}
-                  className="px-3 py-1.5 text-xs text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+                  className="px-4 py-2 text-xs text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-full border border-slate-200 transition-colors"
                 >
                   Annulla
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 text-xs text-white bg-indigo-700 hover:bg-indigo-800 rounded-lg shadow-sm flex items-center gap-1 font-bold"
+                  className="px-5 py-2 text-xs text-white bg-gradient-to-r from-[#36D1DC] to-[#5B86E5] rounded-full shadow-[0_4px_12px_rgba(91,134,229,0.25)] flex items-center gap-1 font-bold"
                 >
                   <Save size={12} />
                   <span>Salva Scheda</span>

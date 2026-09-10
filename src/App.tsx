@@ -5,6 +5,7 @@ import NewEventModal from './components/NewEventModal';
 import EditEventModal from './components/EditEventModal';
 import ControlPanel from './components/ControlPanel';
 import ReportSection from './components/ReportSection';
+import LoginScreen from './components/LoginScreen';
 
 // Firebase Imports
 import { collection, doc, setDoc, deleteDoc, getDocs, onSnapshot } from 'firebase/firestore';
@@ -106,6 +107,7 @@ function cleanFirestoreData<T extends object>(obj: T): T {
 }
 
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const [participantsMap, setParticipantsMap] = useState<Record<string, Participant[]>>({});
   const [logsMap, setLogsMap] = useState<Record<string, AttendanceLog[]>>({});
@@ -114,6 +116,36 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<'control' | 'reports'>('control');
   const [isNewEventModalOpen, setIsNewEventModalOpen] = useState(false);
   const [isEditEventModalOpen, setIsEditEventModalOpen] = useState(false);
+
+  // Check active JWT session on application boot
+  useEffect(() => {
+    fetch('/api/check-session')
+      .then(res => {
+        if (res.ok) {
+          return res.json();
+        }
+        throw new Error();
+      })
+      .then(data => {
+        if (data.authenticated) {
+          setIsAuthenticated(true);
+        } else {
+          setIsAuthenticated(false);
+        }
+      })
+      .catch(() => {
+        setIsAuthenticated(false);
+      });
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/logout', { method: 'POST' });
+    } catch (e) {
+      console.error('Logout error', e);
+    }
+    setIsAuthenticated(false);
+  };
 
   // Admin deletion security state
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
@@ -532,28 +564,56 @@ export default function App() {
   const activeParticipants = selectedEventId ? (participantsMap[selectedEventId] || []) : [];
   const activeLogs = selectedEventId ? (logsMap[selectedEventId] || []) : [];
 
+  if (isAuthenticated === null) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center font-sans">
+        <div className="relative flex flex-col items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-emerald-600/20 text-emerald-500 flex items-center justify-center border border-emerald-500/20 animate-spin">
+            <RefreshCw size={24} />
+          </div>
+          <span className="text-[10px] text-slate-500 font-black uppercase tracking-widest animate-pulse">SmartGate Sicurezza...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <LoginScreen onLoginSuccess={() => setIsAuthenticated(true)} />;
+  }
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans flex flex-col">
+    <div className="min-h-screen bg-[#F4F7FB] text-[#1E293B] font-sans flex flex-col">
       
-      {/* Global Navigation Header Bar */}
-      <header className="sticky top-0 z-30 bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between shadow-xs">
+      {/* Global Navigation Header Bar with Soft UI Shadow */}
+      <header className="sticky top-0 z-30 bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between shadow-[0_2px_15px_rgba(0,0,0,0.015)]">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-emerald-700 flex items-center justify-center text-white font-bold text-lg shadow-sm">
-            C
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-[#36D1DC] to-[#5B86E5] flex items-center justify-center text-white font-black text-lg shadow-[0_4px_12px_rgba(91,134,229,0.25)]">
+            SG
           </div>
           <div>
-            <h1 className="text-base font-black text-slate-800 tracking-tight leading-none">SmartGate</h1>
-            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Controllo Presenze Congressi</span>
+            <h1 className="text-base font-black text-[#1E293B] tracking-tight leading-none">SmartGate</h1>
+            <span className="text-[10px] text-[#64748B] font-bold uppercase tracking-wider">Controllo Presenze Congressi</span>
           </div>
         </div>
 
-        {selectedEventId && selectedEvent && (
-          <div className="hidden md:flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-lg px-3 py-1 text-xs">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-slate-500 font-semibold">Stazione attiva:</span>
-            <span className="text-slate-800 font-black truncate max-w-xs">{selectedEvent.title}</span>
-          </div>
-        )}
+        <div className="flex items-center gap-4">
+          {selectedEventId && selectedEvent && (
+            <div className="hidden md:flex items-center gap-2 bg-[#E8F3FF] border border-[#E8F3FF] rounded-xl px-3 py-1.5 text-xs">
+              <span className="w-2 h-2 rounded-full bg-[#2589F5] animate-pulse" />
+              <span className="text-[#2589F5] font-bold">Stazione attiva:</span>
+              <span className="text-[#1E293B] font-black truncate max-w-xs">{selectedEvent.title}</span>
+            </div>
+          )}
+
+          <button
+            onClick={handleLogout}
+            className="inline-flex items-center gap-1.5 px-4.5 py-2 border border-slate-200/80 hover:border-[#2589F5] hover:bg-[#E8F3FF]/40 rounded-full text-xs font-semibold text-[#64748B] hover:text-[#2589F5] cursor-pointer transition-all"
+            title="Disconnetti in modo sicuro"
+          >
+            <LogOut size={14} />
+            <span className="hidden sm:inline">Esci</span>
+          </button>
+        </div>
       </header>
 
       {/* Main Container Workspace */}
@@ -564,22 +624,22 @@ export default function App() {
           /* VIEW 1: CONGRESS LIST DASHBOARD */
           <div className="space-y-6">
             
-            {/* Dashboard Header banner */}
+            {/* Dashboard Header banner with Pill action */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div>
-                <h2 className="text-2xl font-black text-slate-800 tracking-tight">Pannello di Controllo Congressi</h2>
-                <p className="text-sm text-slate-500">Seleziona un evento attivo per registrare le presenze con penna laser o creane uno nuovo.</p>
+              <div className="space-y-1">
+                <h2 className="text-2xl font-black text-[#1E293B] tracking-tight">Pannello di Controllo Congressi</h2>
+                <p className="text-sm text-[#64748B] font-medium">Seleziona un evento attivo per registrare le presenze con penna laser o creane uno nuovo.</p>
               </div>
               <button
                 onClick={() => setIsNewEventModalOpen(true)}
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-sm rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-[#36D1DC] to-[#5B86E5] text-white font-bold text-xs uppercase tracking-wider rounded-full shadow-[0_4px_15px_rgba(91,134,229,0.3)] hover:opacity-95 transition-all cursor-pointer"
               >
-                <Plus size={18} />
+                <Plus size={16} />
                 <span>Nuovo Congresso</span>
               </button>
             </div>
 
-            {/* List of Registered Congresses */}
+            {/* List of Registered Congresses with Soft Rounded 2xl Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {events.map(event => {
                 const stats = getEventWithStats(event);
@@ -590,27 +650,27 @@ export default function App() {
                   <div 
                     key={event.id}
                     onClick={() => { setSelectedEventId(event.id); setActiveTab('control'); }}
-                    className="bg-white border border-slate-150/80 rounded-xl overflow-hidden hover:shadow-md hover:border-slate-300 transition-all cursor-pointer group flex flex-col justify-between"
+                    className="bg-white border border-slate-100 rounded-2xl overflow-hidden hover:shadow-[0_12px_40px_rgba(0,0,0,0.035)] hover:border-[#E8F3FF] transition-all cursor-pointer group flex flex-col justify-between shadow-xs"
                   >
                     {/* Event Cover Image / Pattern */}
-                    <div className="w-full aspect-[16/11] relative bg-slate-100 overflow-hidden shrink-0">
+                    <div className="w-full aspect-[16/11] relative bg-[#F4F7FB] overflow-hidden shrink-0">
                       {event.image ? (
                         <img 
-                          src={event.image} 
-                          alt={event.title}
-                          referrerPolicy="no-referrer"
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                           src={event.image} 
+                           alt={event.title}
+                           referrerPolicy="no-referrer"
+                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-103"
                         />
                       ) : (
-                        <div className="w-full h-full bg-linear-to-br from-emerald-600 to-teal-800 flex items-center justify-center relative p-4 text-center">
+                        <div className="w-full h-full bg-gradient-to-br from-[#36D1DC] to-[#5B86E5] flex items-center justify-center relative p-4 text-center">
                           <BookOpen className="text-white/10 absolute -right-4 -bottom-4 rotate-12" size={80} />
                           <span className="text-white/60 text-[10px] font-black tracking-widest uppercase">SmartGate Congressi</span>
                         </div>
                       )}
                       
                       {/* Event Status and Delete/Edit Button overlays */}
-                      <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10">
-                        <span className="inline-flex items-center gap-1 text-[9px] bg-slate-900/85 text-white font-black px-2.5 py-1 rounded-full uppercase backdrop-blur-xs">
+                      <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
+                        <span className="inline-flex items-center gap-1.5 text-[9px] bg-[#1E293B]/90 text-white font-black px-3 py-1.5 rounded-full uppercase backdrop-blur-xs">
                           {event.status === 'active' ? '● In Corso' : 'Archiviato'}
                         </span>
                         
@@ -622,10 +682,10 @@ export default function App() {
                               setSelectedEventId(event.id);
                               setIsEditEventModalOpen(true);
                             }}
-                            className="p-1.5 bg-white text-slate-500 hover:text-emerald-700 rounded-lg shadow-sm hover:scale-105 transition-all cursor-pointer border border-slate-100 flex items-center justify-center"
+                            className="p-2 bg-white text-[#64748B] hover:text-[#2589F5] rounded-xl shadow-xs hover:scale-105 transition-all cursor-pointer border border-slate-100 flex items-center justify-center"
                             title="Modifica questo congresso"
                           >
-                            <Edit2 size={11} />
+                            <Edit2 size={12} />
                           </button>
                           
                           <button
@@ -634,52 +694,52 @@ export default function App() {
                               e.stopPropagation();
                               setDeletingEventId(event.id);
                             }}
-                            className="p-1.5 bg-white text-slate-400 hover:text-red-600 rounded-lg shadow-sm hover:scale-105 transition-all cursor-pointer border border-slate-100 flex items-center justify-center"
+                            className="p-2 bg-white text-[#64748B] hover:text-red-600 rounded-xl shadow-xs hover:scale-105 transition-all cursor-pointer border border-slate-100 flex items-center justify-center"
                             title="Elimina questo congresso"
                           >
-                            <Trash2 size={11} />
+                            <Trash2 size={12} />
                           </button>
                         </div>
                       </div>
                     </div>
 
-                    <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
-                      <div className="space-y-1.5">
-                        <div className="flex items-center justify-between text-slate-400 text-[10px] font-black uppercase tracking-wider">
-                          <span className="truncate flex items-center gap-1 max-w-[50%] font-semibold">
-                            <MapPin size={11} className="shrink-0 text-slate-350" />
-                            <span className="truncate">{event.location || 'Sede da definire'}</span>
+                    <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-[#64748B] text-[10px] font-bold uppercase tracking-wider">
+                          <span className="truncate flex items-center gap-1 max-w-[50%]">
+                            <MapPin size={12} className="shrink-0 text-[#2589F5]" />
+                            <span className="truncate text-[#1E293B]">{event.location || 'Sede da definire'}</span>
                           </span>
-                          <span className="flex items-center gap-1 shrink-0 font-semibold">
-                            <Calendar size={11} className="shrink-0 text-slate-350" />
-                            <span>{start === end ? start : `${start} - ${end}`}</span>
+                          <span className="flex items-center gap-1 shrink-0">
+                            <Calendar size={12} className="shrink-0 text-[#2589F5]" />
+                            <span className="text-[#1E293B]">{start === end ? start : `${start} - ${end}`}</span>
                           </span>
                         </div>
 
-                        <h3 className="text-base font-black text-slate-800 group-hover:text-emerald-700 transition-colors line-clamp-2 leading-snug">
+                        <h3 className="text-base font-black text-[#1E293B] group-hover:text-[#2589F5] transition-colors line-clamp-2 leading-snug">
                           {event.title}
                         </h3>
                       </div>
 
-                      {/* Quick Analytics footer */}
-                      <div className="border-t border-slate-100 pt-3 flex items-center justify-between text-xs shrink-0">
-                        <div className="flex items-center gap-4">
+                      {/* Quick Analytics footer with soft styling */}
+                      <div className="border-t border-slate-50 pt-4 flex items-center justify-between text-xs shrink-0">
+                        <div className="flex items-center gap-5">
                           <div>
-                            <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider">Iscritti</span>
-                            <span className="font-extrabold text-slate-700">{stats.totalParticipants}</span>
+                            <span className="block text-[9px] font-bold text-[#64748B] uppercase tracking-wider">Iscritti</span>
+                            <span className="font-extrabold text-slate-800 text-sm">{stats.totalParticipants}</span>
                           </div>
                           <div>
-                            <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider">Presenti</span>
-                            <span className="font-extrabold text-emerald-700">{stats.currentlyInside}</span>
+                            <span className="block text-[9px] font-bold text-[#64748B] uppercase tracking-wider">Presenti</span>
+                            <span className="font-extrabold text-[#2589F5] text-sm">{stats.currentlyInside}</span>
                           </div>
                           <div>
-                            <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider">Scansioni</span>
-                            <span className="font-extrabold text-slate-500">{stats.totalLogsCount}</span>
+                            <span className="block text-[9px] font-bold text-[#64748B] uppercase tracking-wider">Scansioni</span>
+                            <span className="font-extrabold text-slate-600 text-sm">{stats.totalLogsCount}</span>
                           </div>
                         </div>
 
-                        <div className="w-7 h-7 rounded-lg bg-slate-50 group-hover:bg-emerald-50 text-slate-400 group-hover:text-emerald-700 flex items-center justify-center transition-all shrink-0">
-                          <ChevronRight size={14} />
+                        <div className="w-8 h-8 rounded-xl bg-[#F4F7FB] group-hover:bg-[#E8F3FF] text-[#64748B] group-hover:text-[#2589F5] flex items-center justify-center transition-all shrink-0">
+                          <ChevronRight size={16} />
                         </div>
                       </div>
                     </div>
@@ -688,12 +748,12 @@ export default function App() {
               })}
 
               {events.length === 0 && (
-                <div className="col-span-1 md:col-span-2 bg-white border border-dashed border-slate-200 rounded-xl py-16 text-center space-y-3">
-                  <BookOpen className="mx-auto text-slate-350" size={40} />
-                  <p className="text-sm text-slate-500 font-semibold">Nessun congresso in memoria. Creane uno per iniziare!</p>
+                <div className="col-span-1 md:col-span-2 bg-white border border-dashed border-slate-200 rounded-2xl py-20 text-center space-y-4 shadow-3xs">
+                  <BookOpen className="mx-auto text-slate-300" size={48} />
+                  <p className="text-sm text-[#64748B] font-semibold">Nessun congresso in memoria. Creane uno per iniziare!</p>
                   <button
                     onClick={() => setIsNewEventModalOpen(true)}
-                    className="inline-flex items-center gap-1.5 text-xs text-emerald-700 font-black hover:text-emerald-800"
+                    className="inline-flex items-center gap-1.5 text-xs text-[#2589F5] font-black hover:text-[#5B86E5] uppercase tracking-wider"
                   >
                     <span>Crea ora il tuo primo evento</span>
                     <ChevronRight size={14} />
@@ -710,60 +770,60 @@ export default function App() {
           <div className="space-y-6">
             
             {/* Workspace Header breadcrumb */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-150 pb-5">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 border-b border-slate-100 pb-5">
               <div className="flex items-start gap-4">
                 <button
                   onClick={() => setSelectedEventId(null)}
-                  className="w-10 h-10 rounded-xl bg-white border border-slate-200 hover:border-slate-300 text-slate-500 hover:text-slate-800 flex items-center justify-center shadow-xs transition-colors cursor-pointer"
+                  className="w-10 h-10 rounded-xl bg-white border border-slate-150 hover:border-[#2589F5] text-[#64748B] hover:text-[#2589F5] flex items-center justify-center shadow-xs transition-all cursor-pointer"
                   title="Torna all'elenco eventi"
                 >
                   <ArrowLeft size={18} />
                 </button>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[10px] bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded-full border border-emerald-150 uppercase">
+                    <span className="text-[10px] bg-[#E8F3FF] text-[#2589F5] font-bold px-2.5 py-1 rounded-full border border-[#E8F3FF] uppercase tracking-wider">
                       Gate Registrazione Presenze
                     </span>
-                    <span className="text-xs text-slate-400 font-semibold">ID: {selectedEvent?.id}</span>
+                    <span className="text-xs text-[#64748B] font-semibold">ID: {selectedEvent?.id}</span>
                   </div>
-                  <div className="flex items-center gap-2.5 flex-wrap">
-                    <h2 className="text-xl font-black text-slate-800 truncate max-w-md md:max-w-xl leading-snug">{selectedEvent?.title}</h2>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <h2 className="text-xl font-black text-[#1E293B] truncate max-w-md md:max-w-xl leading-snug">{selectedEvent?.title}</h2>
                     <button
                       onClick={() => setIsEditEventModalOpen(true)}
-                      className="inline-flex items-center gap-1 text-[10px] bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-800 font-black px-2.5 py-1 rounded-md transition-all border border-slate-200 shadow-3xs hover:shadow-2xs shrink-0 cursor-pointer"
+                      className="inline-flex items-center gap-1.5 text-[10px] bg-white hover:bg-[#E8F3FF]/40 text-[#64748B] hover:text-[#2589F5] font-bold px-3.5 py-1.5 rounded-full transition-all border border-slate-200 shadow-3xs shrink-0 cursor-pointer"
                       title="Modifica dati del congresso e lista iscritti"
                     >
-                      <Edit2 size={10} />
+                      <Edit2 size={11} />
                       <span>Modifica</span>
                     </button>
                   </div>
                   {selectedEvent?.location && (
-                    <div className="flex items-center gap-1 text-slate-400 text-xs mt-0.5">
-                      <MapPin size={12} />
+                    <div className="flex items-center gap-1 text-[#64748B] text-xs mt-1.5">
+                      <MapPin size={13} className="text-[#2589F5]" />
                       <span className="truncate font-semibold">{selectedEvent.location}</span>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Action tabs selectors */}
-              <div className="flex bg-slate-100 rounded-lg p-0.5 border border-slate-200 self-start md:self-center text-xs">
+              {/* Action tabs selectors with Pill Style */}
+              <div className="flex bg-[#E8F3FF] rounded-full p-1 border border-[#E8F3FF] self-start lg:self-center text-xs">
                 <button
                   onClick={() => setActiveTab('control')}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-md font-semibold transition-all ${
-                    activeTab === 'control' ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-500 hover:text-slate-700'
+                  className={`flex items-center gap-1.5 px-5 py-2.5 rounded-full font-bold uppercase tracking-wider text-[10px] transition-all ${
+                    activeTab === 'control' ? 'bg-white text-[#2589F5] shadow-xs' : 'text-[#64748B] hover:text-[#1E293B]'
                   }`}
                 >
-                  <Activity size={14} />
-                  <span>Pannello Controllo & Scanner ({activeParticipants.length})</span>
+                  <Activity size={13} />
+                  <span>Scanner Laser & Console ({activeParticipants.length})</span>
                 </button>
                 <button
                   onClick={() => setActiveTab('reports')}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-md font-semibold transition-all ${
-                    activeTab === 'reports' ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-500 hover:text-slate-700'
+                  className={`flex items-center gap-1.5 px-5 py-2.5 rounded-full font-bold uppercase tracking-wider text-[10px] transition-all ${
+                    activeTab === 'reports' ? 'bg-white text-[#2589F5] shadow-xs' : 'text-[#64748B] hover:text-[#1E293B]'
                   }`}
                 >
-                  <BarChart3 size={14} />
+                  <BarChart3 size={13} />
                   <span>Report & Storico</span>
                 </button>
               </div>
@@ -828,14 +888,14 @@ export default function App() {
 
       {/* Administrator Password Confirmation Dialog Modal */}
       {deletingEventId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
-          <div className="w-full max-w-sm bg-white rounded-xl shadow-xl overflow-hidden border border-slate-100 p-6 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 backdrop-blur-xs p-4">
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100 p-6 space-y-4">
             <div className="text-center space-y-2">
               <div className="w-12 h-12 rounded-full bg-red-50 text-red-600 flex items-center justify-center mx-auto">
                 <Trash2 size={24} />
               </div>
-              <h3 className="text-base font-black text-slate-800">Cancellazione Protetta</h3>
-              <p className="text-xs text-slate-500">Inserisci la password di amministratore per eliminare definitivamente questo evento e tutto il suo storico.</p>
+              <h3 className="text-base font-black text-[#1E293B]">Cancellazione Protetta</h3>
+              <p className="text-xs text-[#64748B] font-medium">Inserisci la password di amministratore per eliminare definitivamente questo evento e tutto il suo storico.</p>
             </div>
             
             <div className="space-y-2">
@@ -844,18 +904,18 @@ export default function App() {
                 placeholder="Password Amministratore"
                 value={passwordInput}
                 onChange={e => { setPasswordInput(e.target.value); setPasswordError(''); }}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-center text-slate-800 focus:outline-hidden focus:border-slate-400 font-mono"
+                className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-center text-slate-800 focus:outline-hidden focus:border-[#2589F5] focus:ring-4 focus:ring-[#2589F5]/10 transition-all font-mono"
               />
               {passwordError && (
                 <p className="text-[10px] text-red-600 font-bold text-center">{passwordError}</p>
               )}
             </div>
             
-            <div className="flex gap-2 text-xs font-semibold">
+            <div className="flex gap-2 text-xs font-bold uppercase tracking-wider">
               <button
                 type="button"
                 onClick={() => { setDeletingEventId(null); setPasswordInput(''); setPasswordError(''); }}
-                className="flex-1 py-2 text-slate-500 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-250 rounded-lg transition-colors cursor-pointer"
+                className="flex-1 py-2.5 text-[#64748B] hover:text-[#1E293B] bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-full transition-colors cursor-pointer"
               >
                 Annulla
               </button>
@@ -871,9 +931,9 @@ export default function App() {
                     setPasswordError('Password amministratore errata!');
                   }
                 }}
-                className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors cursor-pointer"
+                className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-full transition-colors cursor-pointer"
               >
-                Conferma Elimina
+                Conferma
               </button>
             </div>
           </div>

@@ -753,27 +753,27 @@ export default function ControlPanel({ eventId, eventTitle, eventDate, participa
     <div className="space-y-6">
 
       {/* 0. Unified Barcode Laser Scanning Console & Simulator */}
-      <div className="bg-white border border-slate-100 rounded-xl shadow-xs overflow-hidden">
+      <div className="bg-white border border-slate-100 rounded-2xl shadow-[0_4px_25px_rgba(0,0,0,0.015)] overflow-hidden">
         {/* Console Accordion Header */}
         <button
           onClick={() => setIsScannerConsoleOpen(!isScannerConsoleOpen)}
           className="w-full px-5 py-4 flex items-center justify-between bg-slate-50/50 hover:bg-slate-50 transition-colors border-b border-slate-100 cursor-pointer text-left"
         >
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-emerald-750 flex items-center justify-center text-white shrink-0 shadow-sm">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-[#36D1DC] to-[#5B86E5] flex items-center justify-center text-white shrink-0 shadow-sm">
               <Scan size={14} />
             </div>
             <div>
-              <span className="text-xs font-black text-slate-800 uppercase tracking-wider block">Stazione Scanner Laser & Simulatore</span>
-              <span className="text-[10px] text-slate-400 font-semibold">
+              <span className="text-xs font-black text-[#1E293B] uppercase tracking-wider block">Stazione Scanner Laser & Simulatore</span>
+              <span className="text-[10px] text-[#64748B] font-semibold">
                 {isScannerConsoleOpen ? 'Clicca per nascondere la console' : 'Clicca per espandere la console scanner'}
               </span>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full uppercase">Laser Pronto</span>
+              <span className="w-2 h-2 rounded-full bg-[#2589F5] animate-pulse" />
+              <span className="text-[10px] text-[#2589F5] font-bold bg-[#E8F3FF] border border-[#E8F3FF] px-2.5 py-1 rounded-full uppercase">Laser Pronto</span>
             </div>
             <ChevronRight 
               size={16} 
@@ -791,7 +791,7 @@ export default function ControlPanel({ eventId, eventTitle, eventDate, participa
                 {/* Laser Receiver Box */}
                 <div 
                   onClick={forceFocus}
-                  className="bg-slate-900 border border-slate-850 rounded-xl p-6 flex flex-col items-center justify-center text-center relative overflow-hidden min-h-[300px] shadow-sm cursor-pointer group"
+                  className="bg-slate-900 border border-slate-850 rounded-2xl p-6 flex flex-col items-center justify-center text-center relative overflow-hidden min-h-[300px] shadow-sm cursor-pointer group"
                 >
                   {/* Laser Beam Animation */}
                   <div className="absolute top-0 left-0 w-full h-1 bg-red-500 opacity-60 animate-bounce shadow-[0_0_6px_rgba(239,68,68,0.7)] z-10" />
@@ -803,7 +803,7 @@ export default function ControlPanel({ eventId, eventTitle, eventDate, participa
                         e.stopPropagation();
                         setIsKeyboardListenerActive(!isKeyboardListenerActive);
                       }}
-                      className={`text-[10px] font-bold px-2 py-1 rounded border transition-all flex items-center gap-1 ${
+                      className={`text-[10px] font-bold px-2.5 py-1 rounded-full border transition-all flex items-center gap-1 ${
                         isKeyboardListenerActive 
                           ? 'bg-emerald-950 text-emerald-400 border-emerald-800' 
                           : 'bg-slate-800 text-slate-400 border-slate-700'
@@ -819,7 +819,7 @@ export default function ControlPanel({ eventId, eventTitle, eventDate, participa
                         e.stopPropagation();
                         setSoundEnabled(!soundEnabled);
                       }}
-                      className="text-slate-400 hover:text-white transition-colors bg-slate-800 p-1.5 rounded border border-slate-700"
+                      className="text-slate-400 hover:text-white transition-colors bg-slate-800 p-1.5 rounded-full border border-slate-700"
                       title={soundEnabled ? "Disattiva beep acustico" : "Attiva beep acustico"}
                     >
                       {soundEnabled ? <Volume2 size={13} /> : <VolumeX size={13} />}
@@ -827,12 +827,12 @@ export default function ControlPanel({ eventId, eventTitle, eventDate, participa
                   </div>
 
                   <div className="relative mb-4">
-                    <div className="w-16 h-16 rounded-xl border border-emerald-500/20 flex items-center justify-center relative animate-pulse bg-emerald-950/20">
-                      <Scan className="text-emerald-400" size={32} strokeWidth={1.5} />
-                      <div className="absolute top-0 left-0 w-3 h-3 border-t border-l border-emerald-400 -mt-[1px] -ml-[1px]" />
-                      <div className="absolute top-0 right-0 w-3 h-3 border-t border-r border-emerald-400 -mt-[1px] -mr-[1px]" />
-                      <div className="absolute bottom-0 left-0 w-3 h-3 border-b border-l border-emerald-400 -mb-[1px] -ml-[1px]" />
-                      <div className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-emerald-400 -mb-[1px] -mr-[1px]" />
+                    <div className="w-16 h-16 rounded-xl border border-[#2589F5]/25 flex items-center justify-center relative animate-pulse bg-[#E8F3FF]/10">
+                      <Scan className="text-[#2589F5]" size={32} strokeWidth={1.5} />
+                      <div className="absolute top-0 left-0 w-3 h-3 border-t border-l border-[#2589F5] -mt-[1px] -ml-[1px]" />
+                      <div className="absolute top-0 right-0 w-3 h-3 border-t border-r border-[#2589F5] -mt-[1px] -mr-[1px]" />
+                      <div className="absolute bottom-0 left-0 w-3 h-3 border-b border-l border-[#2589F5] -mb-[1px] -ml-[1px]" />
+                      <div className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-[#2589F5] -mb-[1px] -mr-[1px]" />
                     </div>
                   </div>
 
@@ -856,7 +856,7 @@ export default function ControlPanel({ eventId, eventTitle, eventDate, participa
                     className="opacity-0 absolute pointer-events-none"
                   />
 
-                  <div className="text-[9px] bg-slate-800 text-slate-400 font-mono px-2.5 py-1 rounded border border-slate-700">
+                  <div className="text-[9px] bg-[#F4F7FB] text-[#64748B] font-mono px-3.5 py-1.5 rounded-xl border border-slate-100">
                     {isKeyboardListenerActive 
                       ? "Pronto a catturare la scansione (non serve cliccare sul testo)" 
                       : "Ascolto laser in pausa. Usa l'inserimento manuale o il simulatore"}
@@ -867,11 +867,11 @@ export default function ControlPanel({ eventId, eventTitle, eventDate, participa
                 {statusMessage.type && (
                   <div className={`p-4 rounded-xl flex items-start gap-3 border text-xs transition-all ${
                     statusMessage.type === 'success' 
-                      ? 'bg-emerald-50 text-emerald-800 border-emerald-150 shadow-xs' 
-                      : 'bg-red-50 text-red-800 border-red-150 shadow-xs'
+                      ? 'bg-emerald-50/80 text-emerald-800 border-emerald-100 shadow-xs' 
+                      : 'bg-red-50/80 text-red-800 border-red-100 shadow-xs'
                   }`}>
                     {statusMessage.type === 'success' ? (
-                      <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shrink-0 text-white font-bold text-[10px]">✓</div>
+                      <div className="w-5 h-5 rounded-full bg-[#2589F5] flex items-center justify-center shrink-0 text-white font-bold text-[10px]">✓</div>
                     ) : (
                       <AlertCircle className="text-red-500 shrink-0 mt-0.5" size={16} />
                     )}
@@ -890,7 +890,7 @@ export default function ControlPanel({ eventId, eventTitle, eventDate, participa
                           {scannedLog && (
                             <div className="flex items-center gap-2 mt-1">
                               <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase ${
-                                scannedLog.status === 'inside' ? 'bg-emerald-200 text-emerald-800' : 'bg-amber-200 text-amber-800'
+                                scannedLog.status === 'inside' ? 'bg-[#E8F3FF] text-[#2589F5] border border-[#E8F3FF]' : 'bg-amber-100 text-amber-800'
                               }`}>
                                 {scannedLog.status === 'inside' ? 'Entrato' : 'Uscito'}
                               </span>
@@ -911,19 +911,19 @@ export default function ControlPanel({ eventId, eventTitle, eventDate, participa
               {/* Right Column: Testing simulation buttons & real-time scanner log feed */}
               <div className="lg:col-span-5 space-y-5">
                 {/* Manual Barcode entry */}
-                <div className="bg-slate-50/50 border border-slate-150 rounded-xl p-4 space-y-3 shadow-2xs">
-                  <span className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">Inserimento Manuale Alternativo</span>
+                <div className="bg-[#F4F7FB]/50 border border-[#E8F3FF]/50 rounded-2xl p-4 space-y-3 shadow-2xs">
+                  <span className="block text-[10px] font-black text-[#64748B] uppercase tracking-wider">Inserimento Manuale Alternativo</span>
                   <form onSubmit={handleManualSubmit} className="flex gap-1.5">
                     <input
                       type="text"
                       placeholder="Codice ID (es. CONF-002 o 0101)"
                       value={manualCode}
                       onChange={e => setManualCode(e.target.value)}
-                      className="flex-1 px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs font-mono focus:outline-hidden focus:border-slate-450 bg-white"
+                      className="flex-1 px-3.5 py-2 border border-slate-200 rounded-xl text-xs font-mono focus:outline-hidden focus:border-[#2589F5] focus:ring-4 focus:ring-[#2589F5]/10 bg-white text-[#1E293B]"
                     />
                     <button
                       type="submit"
-                      className="px-3 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-lg flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                      className="px-4.5 bg-gradient-to-r from-[#36D1DC] to-[#5B86E5] text-white font-bold text-xs uppercase tracking-wider rounded-full flex items-center justify-center gap-1 cursor-pointer transition-all shadow-xs"
                     >
                       <span>Invia</span>
                       <CornerDownLeft size={12} />
@@ -932,10 +932,10 @@ export default function ControlPanel({ eventId, eventTitle, eventDate, participa
                 </div>
 
                 {/* Laser Gun Simulator for Testing */}
-                <div className="bg-slate-50/50 border border-slate-150 rounded-xl p-4 space-y-3">
+                <div className="bg-[#F4F7FB]/50 border border-[#E8F3FF]/50 rounded-2xl p-4 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">Simulatore Laser (Click per scansionare)</span>
-                    <span className="bg-amber-100 text-amber-800 text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full">Test</span>
+                    <span className="block text-[10px] font-black text-[#64748B] uppercase tracking-wider">Simulatore Laser (Click per scansionare)</span>
+                    <span className="bg-[#E8F3FF] text-[#2589F5] text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full">Test</span>
                   </div>
                   <div className="grid grid-cols-2 gap-1.5 max-h-36 overflow-y-auto pr-1">
                     {participants.map(p => {
@@ -945,17 +945,17 @@ export default function ControlPanel({ eventId, eventTitle, eventDate, participa
                         <button
                           key={p.id}
                           onClick={() => processBarcode(p.id)}
-                          className={`p-2 rounded-lg border text-left transition-all hover:border-slate-355 flex justify-between items-center cursor-pointer ${
+                          className={`p-2 rounded-xl border text-left transition-all hover:border-[#2589F5]/30 flex justify-between items-center cursor-pointer ${
                             inside 
-                              ? 'bg-emerald-50/40 border-emerald-200 hover:bg-emerald-50' 
-                              : 'bg-white border-slate-200 hover:bg-slate-50'
+                              ? 'bg-[#E8F3FF]/40 border-[#2589F5]/20 hover:bg-[#E8F3FF]/60' 
+                              : 'bg-white border-slate-200 hover:bg-[#F4F7FB]'
                           }`}
                         >
                           <div className="min-w-0 flex-1 pr-1">
-                            <div className="text-xs font-bold text-slate-700 truncate">{p.lastName} {p.firstName}</div>
-                            <div className="text-[9px] text-slate-400 font-mono truncate">{p.id}</div>
+                            <div className="text-xs font-bold text-[#1E293B] truncate">{p.lastName} {p.firstName}</div>
+                            <div className="text-[9px] text-[#64748B] font-mono truncate">{p.id}</div>
                           </div>
-                          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${inside ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
+                          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${inside ? 'bg-[#2589F5] animate-pulse' : 'bg-slate-350'}`} />
                         </button>
                       );
                     })}
@@ -963,29 +963,29 @@ export default function ControlPanel({ eventId, eventTitle, eventDate, participa
                 </div>
 
                 {/* Real-time scan log timeline */}
-                <div className="bg-slate-50/30 border border-slate-150 rounded-xl p-4 space-y-3">
-                  <span className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">Timeline Ultime Scansioni</span>
+                <div className="bg-[#F4F7FB]/30 border border-[#E8F3FF]/50 rounded-2xl p-4 space-y-3">
+                  <span className="block text-[10px] font-black text-[#64748B] uppercase tracking-wider">Timeline Ultime Scansioni</span>
                   <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
                     {recentActivities.map(act => (
                       <div 
                         key={act.id} 
-                        className="flex items-center justify-between p-2 rounded-lg border border-slate-100 bg-white text-[11px] shadow-2xs"
+                        className="flex items-center justify-between p-2 rounded-xl border border-slate-100 bg-white text-[11px] shadow-2xs"
                       >
                         <div className="flex items-center gap-2 min-w-0">
-                          <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${
-                            act.type === 'check_in' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
+                          <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${
+                            act.type === 'check_in' ? 'bg-[#E8F3FF] text-[#2589F5]' : 'bg-amber-50 text-amber-700'
                           }`}>
                             <ArrowRight size={10} className={act.type === 'check_in' ? 'rotate-45' : '-rotate-135'} />
                           </div>
                           <div className="min-w-0">
-                            <div className="font-bold text-slate-800 truncate leading-tight">{act.participantName}</div>
-                            <div className="text-[9px] text-slate-400 font-mono">{act.barcode}</div>
+                            <div className="font-bold text-[#1E293B] truncate leading-tight">{act.participantName}</div>
+                            <div className="text-[9px] text-[#64748B] font-mono">{act.barcode}</div>
                           </div>
                         </div>
                         <div className="text-right shrink-0">
-                          <div className="font-mono text-[10px] text-slate-600 font-bold">{act.time}</div>
+                          <div className="font-mono text-[10px] text-[#64748B] font-bold">{act.time}</div>
                           <span className={`text-[8px] font-extrabold px-1.5 py-0.2 rounded-full ${
-                            act.type === 'check_in' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                            act.type === 'check_in' ? 'bg-[#E8F3FF] text-[#2589F5]' : 'bg-amber-100 text-amber-800'
                           }`}>
                             {act.type === 'check_in' ? 'Ingresso' : `Uscito (${act.duration})`}
                           </span>
@@ -1005,31 +1005,31 @@ export default function ControlPanel({ eventId, eventTitle, eventDate, participa
         )}
       </div>
 
-      {/* 1. Statistics Cards */}
+      {/* 1. Statistics Cards - Soft UI styled */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         
         {/* Total Registered */}
-        <div className="bg-white border border-slate-100 rounded-xl p-5 shadow-xs flex items-center gap-4">
-          <div className="w-10 h-10 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0 text-slate-600">
+        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.015)] flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-[#F4F7FB] border border-slate-100 flex items-center justify-center shrink-0 text-[#64748B]">
             <Users size={20} />
           </div>
           <div>
-            <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Iscritti Totali</span>
-            <span className="text-2xl font-extrabold text-slate-800">{totalRegistered}</span>
+            <span className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Iscritti Totali</span>
+            <span className="text-2xl font-black text-[#1E293B]">{totalRegistered}</span>
           </div>
         </div>
 
         {/* Present Inside */}
-        <div className="bg-white border border-slate-100 rounded-xl p-5 shadow-xs flex items-center gap-4">
-          <div className="w-10 h-10 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0 text-emerald-700">
+        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.015)] flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-[#E8F3FF] border border-[#E8F3FF] flex items-center justify-center shrink-0 text-[#2589F5]">
             <UserCheck size={20} />
           </div>
           <div>
-            <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">In Aula (Presenti)</span>
+            <span className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider">In Aula (Presenti)</span>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl font-extrabold text-slate-800">{currentInside}</span>
+              <span className="text-2xl font-black text-[#2589F5]">{currentInside}</span>
               {totalRegistered > 0 && (
-                <span className="text-[10px] text-slate-400 font-semibold">
+                <span className="text-[10px] text-[#64748B] font-semibold">
                   ({Math.round((currentInside / totalRegistered) * 100)}%)
                 </span>
               )}
@@ -1038,24 +1038,24 @@ export default function ControlPanel({ eventId, eventTitle, eventDate, participa
         </div>
 
         {/* Checked Out */}
-        <div className="bg-white border border-slate-100 rounded-xl p-5 shadow-xs flex items-center gap-4">
-          <div className="w-10 h-10 rounded-lg bg-amber-50 border border-amber-100 flex items-center justify-center shrink-0 text-amber-700">
+        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.015)] flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center shrink-0 text-amber-700">
             <UserX size={20} />
           </div>
           <div>
-            <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Usciti</span>
-            <span className="text-2xl font-extrabold text-slate-800">{totalCheckedOut}</span>
+            <span className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Usciti</span>
+            <span className="text-2xl font-black text-slate-800">{totalCheckedOut}</span>
           </div>
         </div>
 
         {/* Average Permanence */}
-        <div className="bg-white border border-slate-100 rounded-xl p-5 shadow-xs flex items-center gap-4">
-          <div className="w-10 h-10 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0 text-blue-700">
+        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.015)] flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0 text-blue-700">
             <Award size={20} />
           </div>
           <div>
-            <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Permanenza Media</span>
-            <span className="text-2xl font-extrabold text-slate-800">
+            <span className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Permanenza Media</span>
+            <span className="text-2xl font-black text-slate-800">
               {averagePermanence > 0 ? `${averagePermanence} min` : 'N/D'}
             </span>
           </div>
@@ -1064,41 +1064,41 @@ export default function ControlPanel({ eventId, eventTitle, eventDate, participa
       </div>
 
       {/* 2. Controls & List View */}
-      <div className="bg-white border border-slate-100 rounded-xl shadow-xs overflow-hidden">
+      <div className="bg-white border border-[#E8F3FF]/50 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.015)] overflow-hidden">
         
         {/* Table Filters/Search Area */}
         <div className="p-4 border-b border-slate-100 flex flex-col md:flex-row gap-3 md:items-center md:justify-between bg-slate-50/30">
           
           {/* Status Tabs */}
-          <div className="flex rounded-lg border border-slate-150 p-0.5 bg-slate-100/50 text-xs">
+          <div className="flex rounded-full border border-slate-200/80 p-1 bg-slate-100/50 text-xs">
             <button
               onClick={() => setFilterStatus('all')}
-              className={`px-3 py-1.5 rounded-md font-semibold transition-all ${
-                filterStatus === 'all' ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-500 hover:text-slate-700'
+              className={`px-4 py-2 rounded-full font-bold uppercase text-[10px] tracking-wider transition-all ${
+                filterStatus === 'all' ? 'bg-white text-[#1E293B] shadow-xs' : 'text-[#64748B] hover:text-[#1E293B]'
               }`}
             >
               Tutti ({totalRegistered})
             </button>
             <button
               onClick={() => setFilterStatus('inside')}
-              className={`px-3 py-1.5 rounded-md font-semibold transition-all ${
-                filterStatus === 'inside' ? 'bg-white text-emerald-700 shadow-xs' : 'text-slate-500 hover:text-emerald-700'
+              className={`px-4 py-2 rounded-full font-bold uppercase text-[10px] tracking-wider transition-all ${
+                filterStatus === 'inside' ? 'bg-white text-[#2589F5] shadow-xs' : 'text-[#64748B] hover:text-[#2589F5]'
               }`}
             >
               In Aula ({currentInside})
             </button>
             <button
               onClick={() => setFilterStatus('outside')}
-              className={`px-3 py-1.5 rounded-md font-semibold transition-all ${
-                filterStatus === 'outside' ? 'bg-white text-amber-700 shadow-xs' : 'text-slate-500 hover:text-amber-700'
+              className={`px-4 py-2 rounded-full font-bold uppercase text-[10px] tracking-wider transition-all ${
+                filterStatus === 'outside' ? 'bg-white text-amber-600 shadow-xs' : 'text-[#64748B] hover:text-amber-600'
               }`}
             >
               Usciti ({totalCheckedOut})
             </button>
             <button
               onClick={() => setFilterStatus('absent')}
-              className={`px-3 py-1.5 rounded-md font-semibold transition-all ${
-                filterStatus === 'absent' ? 'bg-white text-slate-600 shadow-xs' : 'text-slate-500 hover:text-slate-700'
+              className={`px-4 py-2 rounded-full font-bold uppercase text-[10px] tracking-wider transition-all ${
+                filterStatus === 'absent' ? 'bg-white text-[#64748B] shadow-xs' : 'text-[#64748B]/80 hover:text-[#1E293B]'
               }`}
             >
               Assenti ({totalRegistered - currentInside - totalCheckedOut})
@@ -1109,20 +1109,20 @@ export default function ControlPanel({ eventId, eventTitle, eventDate, participa
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto">
             {/* Search Box */}
             <div className="relative flex-1 sm:flex-none">
-              <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
+              <Search className="absolute left-3.5 top-3 text-slate-400" size={15} />
               <input
                 type="text"
                 placeholder="Cerca per nome, azienda, ID..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className="w-full md:w-64 pl-9 pr-3 py-1.5 border border-slate-200 rounded-lg text-xs focus:outline-hidden focus:border-slate-400 text-slate-800 bg-white"
+                className="w-full md:w-64 pl-9 pr-3 py-2.5 border border-slate-200 rounded-xl text-xs focus:outline-hidden focus:border-[#2589F5] focus:ring-4 focus:ring-[#2589F5]/10 text-[#1E293B] bg-white font-semibold"
               />
             </div>
 
             {/* Export PDF Button */}
             <button
               onClick={handleExportPDF}
-              className="px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-xs transition-all whitespace-nowrap shrink-0"
+              className="px-5 py-2.5 bg-red-500 hover:bg-red-600 text-white font-bold rounded-full text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer shadow-[0_4px_12px_rgba(239,68,68,0.2)] hover:shadow-md transition-all whitespace-nowrap shrink-0"
               title="Esporta l'elenco presenze in formato PDF"
             >
               <Download size={13} />
@@ -1209,11 +1209,11 @@ export default function ControlPanel({ eventId, eventTitle, eventDate, participa
                       {minEcmHours !== undefined && minEcmHours > 0 && (
                         <div className="mt-1">
                           {getParticipantTotalHours(p.id) >= minEcmHours ? (
-                            <span className="inline-flex items-center gap-0.5 bg-emerald-50 text-emerald-800 text-[8px] font-black px-1.5 py-0.2 rounded-full border border-emerald-150 uppercase" title="Presenza minima ECM raggiunta">
+                            <span className="inline-flex items-center gap-0.5 bg-[#E8F3FF] text-[#2589F5] text-[8px] font-black px-2 py-0.5 rounded-full border border-[#E8F3FF] uppercase" title="Presenza minima ECM raggiunta">
                               Idoneo ECM
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-0.5 bg-slate-50 text-slate-400 text-[8px] font-bold px-1.5 py-0.2 rounded-full border border-slate-200 uppercase" title={`Presenza inferiore a ${minEcmHours} ore`}>
+                            <span className="inline-flex items-center gap-0.5 bg-slate-50 text-slate-400 text-[8px] font-bold px-2 py-0.5 rounded-full border border-slate-200 uppercase" title={`Presenza inferiore a ${minEcmHours} ore`}>
                               No ECM
                             </span>
                           )}
@@ -1227,7 +1227,7 @@ export default function ControlPanel({ eventId, eventTitle, eventDate, participa
                       {stateInfo.status === 'inside' ? (
                         <button
                           onClick={() => onManualCheckOut(p.id)}
-                          className="px-2 py-1 text-[10px] font-bold bg-amber-50 text-amber-700 hover:bg-amber-100 rounded border border-amber-200 transition-colors cursor-pointer"
+                          className="px-3 py-1 text-[10px] font-bold bg-amber-50 text-amber-700 hover:bg-amber-100 rounded-full border border-amber-200 transition-colors cursor-pointer"
                           title="Registra uscita manuale"
                         >
                           Uscita Manuale
@@ -1235,7 +1235,7 @@ export default function ControlPanel({ eventId, eventTitle, eventDate, participa
                       ) : (
                         <button
                           onClick={() => onManualCheckIn(p.id)}
-                          className="px-2 py-1 text-[10px] font-bold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded border border-emerald-200 transition-colors cursor-pointer"
+                          className="px-3 py-1 text-[10px] font-bold bg-[#E8F3FF] text-[#2589F5] hover:bg-[#E8F3FF]/80 rounded-full border border-[#E8F3FF] transition-colors cursor-pointer"
                           title="Registra ingresso manuale"
                         >
                           Entrata Manuale
@@ -1245,7 +1245,7 @@ export default function ControlPanel({ eventId, eventTitle, eventDate, participa
                       {/* Edit Participant Details Action */}
                       <button
                         onClick={() => handleStartEdit(p)}
-                        className="p-1.5 text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 rounded border border-transparent transition-all cursor-pointer inline-flex items-center"
+                        className="p-1.5 text-slate-400 hover:text-[#2589F5] hover:bg-[#E8F3FF] rounded-lg border border-transparent transition-all cursor-pointer inline-flex items-center"
                         title="Modifica Dati Partecipante"
                       >
                         <Edit2 size={13} />
@@ -1254,7 +1254,7 @@ export default function ControlPanel({ eventId, eventTitle, eventDate, participa
                       {/* Print Badge Action */}
                       <button
                         onClick={() => handlePrintBadge(p)}
-                        className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded border border-transparent transition-all cursor-pointer inline-flex items-center"
+                        className="p-1.5 text-slate-400 hover:text-[#2589F5] hover:bg-[#E8F3FF] rounded-lg border border-transparent transition-all cursor-pointer inline-flex items-center"
                         title="Stampa Badge d'Accesso"
                       >
                         <Printer size={13} />
@@ -1350,7 +1350,7 @@ export default function ControlPanel({ eventId, eventTitle, eventDate, participa
               </button>
               <button
                 onClick={triggerSystemPrint}
-                className="flex-1 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs rounded-lg flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer"
+                className="flex-1 py-2.5 bg-gradient-to-r from-[#36D1DC] to-[#5B86E5] text-white font-semibold text-xs rounded-full flex items-center justify-center gap-2 shadow-[0_4px_12px_rgba(91,134,229,0.25)] hover:shadow-md transition-all cursor-pointer"
               >
                 <Printer size={14} />
                 <span>Stampa Badge</span>
@@ -1364,26 +1364,26 @@ export default function ControlPanel({ eventId, eventTitle, eventDate, participa
       {/* 4. Edit Participant Details Modal Overlay */}
       {editingParticipant && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
-          <div className="w-full max-w-xl bg-white rounded-xl shadow-xl overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
+          <div className="w-full max-w-xl bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
             
             {/* Modal Header */}
             <div className="px-5 py-4 border-b border-slate-150 flex justify-between items-center bg-slate-50/50 shrink-0">
               <div className="flex items-center gap-2">
-                <Edit2 size={16} className="text-emerald-700" />
-                <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Modifica Partecipante e Timbrature</span>
+                <Edit2 size={16} className="text-[#2589F5]" />
+                <span className="text-xs font-black text-[#1E293B] uppercase tracking-wider">Modifica Partecipante e Timbrature</span>
               </div>
               <button 
                 onClick={() => setEditingParticipant(null)}
-                className="text-slate-400 hover:text-slate-600 transition-colors rounded p-1 hover:bg-slate-100 text-xs font-bold cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 transition-colors rounded-full p-1.5 hover:bg-slate-100 text-xs font-bold cursor-pointer"
               >
                 Chiudi
               </button>
             </div>
 
             {/* Modal Body / Scrollable Content */}
-            <div className="p-6 space-y-6 text-xs font-semibold text-slate-600 overflow-y-auto">
+            <div className="p-6 space-y-6 text-xs font-semibold text-[#64748B] overflow-y-auto">
               {editError && (
-                <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-center font-bold text-[11px]">
+                <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-center font-bold text-[11px]">
                   {editError}
                 </div>
               )}
@@ -1400,7 +1400,7 @@ export default function ControlPanel({ eventId, eventTitle, eventDate, participa
                       type="text"
                       value={editForm.firstName}
                       onChange={e => setEditForm({ ...editForm, firstName: e.target.value })}
-                      className="w-full px-3 py-2 border border-slate-250 rounded-lg text-xs text-slate-800 focus:outline-hidden focus:border-slate-400 font-medium"
+                      className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs text-[#1E293B] focus:outline-hidden focus:border-[#2589F5] focus:ring-4 focus:ring-[#2589F5]/10 font-medium bg-white"
                       placeholder="Esempio: Alessandro"
                     />
                   </div>
@@ -1412,7 +1412,7 @@ export default function ControlPanel({ eventId, eventTitle, eventDate, participa
                       type="text"
                       value={editForm.lastName}
                       onChange={e => setEditForm({ ...editForm, lastName: e.target.value })}
-                      className="w-full px-3 py-2 border border-slate-250 rounded-lg text-xs text-slate-800 focus:outline-hidden focus:border-slate-400 font-medium"
+                      className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs text-[#1E293B] focus:outline-hidden focus:border-[#2589F5] focus:ring-4 focus:ring-[#2589F5]/10 font-medium bg-white"
                       placeholder="Esempio: Rossi"
                     />
                   </div>
@@ -1426,7 +1426,7 @@ export default function ControlPanel({ eventId, eventTitle, eventDate, participa
                       type="text"
                       value={editForm.id}
                       onChange={e => setEditForm({ ...editForm, id: e.target.value })}
-                      className="w-full px-3 py-2 border border-slate-250 rounded-lg text-xs text-slate-800 focus:outline-hidden focus:border-slate-400 font-mono font-bold uppercase"
+                      className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs text-[#1E293B] focus:outline-hidden focus:border-[#2589F5] focus:ring-4 focus:ring-[#2589F5]/10 font-mono font-bold uppercase bg-white"
                       placeholder="Esempio: CONF-1234"
                     />
                   </div>
@@ -1438,7 +1438,7 @@ export default function ControlPanel({ eventId, eventTitle, eventDate, participa
                       type="text"
                       value={editForm.company || ''}
                       onChange={e => setEditForm({ ...editForm, company: e.target.value })}
-                      className="w-full px-3 py-2 border border-slate-250 rounded-lg text-xs text-slate-800 focus:outline-hidden focus:border-slate-400 font-medium"
+                      className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs text-[#1E293B] focus:outline-hidden focus:border-[#2589F5] focus:ring-4 focus:ring-[#2589F5]/10 font-medium bg-white"
                       placeholder="Esempio: Azienda Tech S.r.l."
                     />
                   </div>
@@ -1452,7 +1452,7 @@ export default function ControlPanel({ eventId, eventTitle, eventDate, participa
                       type="email"
                       value={editForm.email || ''}
                       onChange={e => setEditForm({ ...editForm, email: e.target.value })}
-                      className="w-full px-3 py-2 border border-slate-250 rounded-lg text-xs text-slate-800 focus:outline-hidden focus:border-slate-400 font-medium"
+                      className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs text-[#1E293B] focus:outline-hidden focus:border-[#2589F5] focus:ring-4 focus:ring-[#2589F5]/10 font-medium bg-white"
                       placeholder="Esempio: alessandro.rossi@email.it"
                     />
                   </div>
@@ -1464,7 +1464,7 @@ export default function ControlPanel({ eventId, eventTitle, eventDate, participa
                       type="text"
                       value={editForm.notes || ''}
                       onChange={e => setEditForm({ ...editForm, notes: e.target.value })}
-                      className="w-full px-3 py-2 border border-slate-250 rounded-lg text-xs text-slate-800 focus:outline-hidden focus:border-slate-400 font-medium"
+                      className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs text-[#1E293B] focus:outline-hidden focus:border-[#2589F5] focus:ring-4 focus:ring-[#2589F5]/10 font-medium bg-white"
                       placeholder="Esempio: Relatore"
                     />
                   </div>
@@ -1474,7 +1474,7 @@ export default function ControlPanel({ eventId, eventTitle, eventDate, participa
               {/* TIMBRATURE / SCAN LOGS MODIFICATION SECTION */}
               <div className="border-t border-slate-150 pt-5 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Storico Scansioni / Timbrature</h4>
+                  <h4 className="text-[10px] font-black text-[#64748B] uppercase tracking-wider">Storico Scansioni / Timbrature</h4>
                   <button
                     type="button"
                     onClick={() => {
@@ -1489,14 +1489,14 @@ export default function ControlPanel({ eventId, eventTitle, eventDate, participa
                       };
                       setEditingLogs([...editingLogs, newLog]);
                     }}
-                    className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded text-[10px] font-bold text-emerald-700 flex items-center gap-1 cursor-pointer transition-colors"
+                    className="px-3.5 py-1.5 bg-[#E8F3FF] hover:bg-[#E8F3FF]/85 border border-[#E8F3FF] rounded-full text-[10px] font-bold text-[#2589F5] flex items-center gap-1 cursor-pointer transition-colors"
                   >
                     + Aggiungi Timbratura
                   </button>
                 </div>
 
                 {editingLogs.length === 0 ? (
-                  <div className="p-4 bg-slate-50 border border-slate-150 rounded-xl text-center">
+                  <div className="p-4 bg-[#F4F7FB]/50 border border-[#E8F3FF]/30 rounded-2xl text-center">
                     <p className="text-slate-400 italic text-xs">Nessuna timbratura registrata per questo utente.</p>
                     <p className="text-[10px] text-slate-350 mt-1 font-medium">Usa il pulsante in alto per aggiungere un ingresso/uscita manuale.</p>
                   </div>
@@ -1504,19 +1504,19 @@ export default function ControlPanel({ eventId, eventTitle, eventDate, participa
                   <div className="space-y-3 max-h-56 overflow-y-auto pr-1">
                     {editingLogs.map((log, index) => {
                       return (
-                        <div key={log.id} className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-3 relative transition-all hover:border-slate-300">
+                        <div key={log.id} className="p-3 bg-[#F4F7FB]/40 border border-slate-200 rounded-xl space-y-3 relative transition-all hover:border-slate-350">
                           <button
                             type="button"
                             onClick={() => {
                               setEditingLogs(editingLogs.filter(l => l.id !== log.id));
                             }}
-                            className="absolute top-2 right-2 text-slate-400 hover:text-red-600 p-1 hover:bg-red-50 rounded transition-colors cursor-pointer"
+                            className="absolute top-2 right-2 text-slate-400 hover:text-red-600 p-1.5 hover:bg-red-50 rounded-full transition-colors cursor-pointer"
                             title="Elimina timbratura"
                           >
                             <Trash2 size={13} />
                           </button>
 
-                          <div className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Rilevazione #{index + 1}</div>
+                          <div className="text-[9px] font-black text-[#64748B] uppercase tracking-wider">Rilevazione #{index + 1}</div>
 
                           <div className="grid grid-cols-2 gap-3">
                             <div>
@@ -1537,7 +1537,7 @@ export default function ControlPanel({ eventId, eventTitle, eventDate, participa
                                   }
                                   setEditingLogs(updated);
                                 }}
-                                className="w-full px-2 py-1.5 border border-slate-200 rounded-md text-[10px] font-mono text-slate-800 focus:outline-hidden focus:border-slate-400 bg-white"
+                                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-[10px] font-mono text-[#1E293B] focus:outline-hidden focus:border-[#2589F5] bg-white"
                               />
                             </div>
                             <div>
@@ -1568,7 +1568,7 @@ export default function ControlPanel({ eventId, eventTitle, eventDate, participa
                                   }
                                   setEditingLogs(updated);
                                 }}
-                                className="w-full px-2 py-1.5 border border-slate-200 rounded-md text-[10px] font-mono text-slate-800 focus:outline-hidden focus:border-slate-400 bg-white"
+                                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-[10px] font-mono text-[#1E293B] focus:outline-hidden focus:border-[#2589F5] bg-white"
                               />
                             </div>
                           </div>
@@ -1586,14 +1586,14 @@ export default function ControlPanel({ eventId, eventTitle, eventDate, participa
               <button
                 type="button"
                 onClick={() => setEditingParticipant(null)}
-                className="flex-1 py-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-all border border-slate-200 cursor-pointer"
+                className="flex-1 py-2.5 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-all border border-slate-200 cursor-pointer"
               >
                 Annulla
               </button>
               <button
                 type="button"
                 onClick={handleSaveEdit}
-                className="flex-1 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg shadow-xs transition-all cursor-pointer text-center"
+                className="flex-1 py-2.5 bg-gradient-to-r from-[#36D1DC] to-[#5B86E5] text-white font-bold rounded-full shadow-[0_4px_12px_rgba(91,134,229,0.25)] hover:shadow-md transition-all cursor-pointer text-center"
               >
                 Salva Modifiche
               </button>
