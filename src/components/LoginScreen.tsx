@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Shield, Lock, User, AlertCircle, RefreshCw, CheckCircle } from 'lucide-react';
+import { Shield, Lock, User, AlertCircle, RefreshCw, CheckCircle, ExternalLink } from 'lucide-react';
 
 interface LoginScreenProps {
   onLoginSuccess: () => void;
@@ -133,12 +133,23 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                 <span>{error}</span>
               </div>
               {error.includes('iframe') && (
-                <div className="mt-2 pt-2 border-t border-red-100 text-[11px] text-slate-600 font-normal leading-relaxed">
-                  💡 <strong className="font-bold text-red-800">Suggerimento per l'Anteprima:</strong> I browser moderni bloccano di default i cookie di terze parti dentro i pannelli incorporati (iframe). Per risolvere subito:
+                <div className="mt-2 pt-2 border-t border-red-100 text-[11px] text-slate-600 font-normal leading-relaxed flex flex-col">
+                  <div>
+                    💡 <strong className="font-bold text-red-800">Suggerimento per l'Anteprima:</strong> I browser moderni bloccano di default i cookie di terze parti dentro i pannelli incorporati (iframe). Per risolvere subito:
+                  </div>
                   <ul className="list-disc list-inside mt-1.5 space-y-1 font-medium text-slate-700 pl-1">
-                    <li>Fai clic su <strong className="text-[#2589F5]">Apri in una nuova scheda</strong> (l'icona con la freccia in alto a destra sopra l'anteprima).</li>
+                    <li>Fai clic sul pulsante azzurro qui sotto per aprire l'applicazione in una nuova scheda.</li>
                     <li>Oppure abilita i cookie di terze parti nelle impostazioni del tuo browser per questo sito.</li>
                   </ul>
+                  <a 
+                    href={window.location.href} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="mt-3.5 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-[#2589F5] hover:bg-[#1a73e8] text-white font-bold rounded-xl shadow-xs transition-all text-center text-xs"
+                  >
+                    <ExternalLink size={13} className="shrink-0" />
+                    Apri in una Nuova Scheda
+                  </a>
                 </div>
               )}
             </motion.div>
