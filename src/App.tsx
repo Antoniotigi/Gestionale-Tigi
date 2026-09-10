@@ -119,7 +119,13 @@ export default function App() {
 
   // Check active JWT session on application boot
   useEffect(() => {
-    fetch('/api/check-session')
+    const localToken = localStorage.getItem('token');
+    const headers: Record<string, string> = {};
+    if (localToken) {
+      headers['Authorization'] = `Bearer ${localToken}`;
+    }
+
+    fetch('/api/check-session', { headers })
       .then(res => {
         if (res.ok) {
           return res.json();
@@ -140,10 +146,16 @@ export default function App() {
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/logout', { method: 'POST' });
+      const localToken = localStorage.getItem('token');
+      const headers: Record<string, string> = {};
+      if (localToken) {
+        headers['Authorization'] = `Bearer ${localToken}`;
+      }
+      await fetch('/api/logout', { method: 'POST', headers });
     } catch (e) {
       console.error('Logout error', e);
     }
+    localStorage.removeItem('token');
     setIsAuthenticated(false);
   };
 

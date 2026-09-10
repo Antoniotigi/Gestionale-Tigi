@@ -109,7 +109,14 @@ function recordSuccess(ip: string) {
 
 // Session authentication gate for all analytical / protected backend endpoints
 function authenticateToken(req: any, res: any, next: any) {
-  const token = req.cookies.token;
+  let token = req.cookies.token;
+  if (!token && req.headers.authorization) {
+    const parts = req.headers.authorization.split(' ');
+    if (parts.length === 2 && parts[0] === 'Bearer') {
+      token = parts[1];
+    }
+  }
+
   if (!token) {
     return res.status(401).json({ error: 'Accesso negato. Sessione scaduta o non autorizzata.' });
   }
@@ -402,7 +409,8 @@ app.post('/api/login', rateLimiter, async (req, res) => {
 
     return res.json({
       status: 'authenticated',
-      username: store.username
+      username: store.username,
+      token: finalToken
     });
 
   } catch (err: any) {
@@ -412,7 +420,14 @@ app.post('/api/login', rateLimiter, async (req, res) => {
 
 // 4. GET /api/check-session (Checks active login state on boot)
 app.get('/api/check-session', (req, res) => {
-  const token = req.cookies.token;
+  let token = req.cookies.token;
+  if (!token && req.headers.authorization) {
+    const parts = req.headers.authorization.split(' ');
+    if (parts.length === 2 && parts[0] === 'Bearer') {
+      token = parts[1];
+    }
+  }
+
   if (!token) {
     return res.status(401).json({ authenticated: false });
   }

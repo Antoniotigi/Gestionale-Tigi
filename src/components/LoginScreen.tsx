@@ -38,7 +38,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
       } else {
         const text = await response.text();
         console.error('Non-JSON response from server:', text);
-        throw new Error('Il servizio non è disponibile o la configurazione del server è errata. Riprova più tardi.');
+        throw new Error('Il servizio non è disponibile o la configurazione del server è errata (Cookie di terze parti bloccati nell\'iframe di anteprima). Riprova caricando l\'applicazione in una nuova scheda.');
       }
 
       if (!response.ok) {
@@ -46,6 +46,9 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
       }
 
       if (data.status === 'authenticated') {
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+        }
         setSuccessMessage('Accesso consentito! Caricamento in corso...');
         setTimeout(() => {
           onLoginSuccess();
@@ -123,10 +126,21 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
             <motion.div 
               initial={{ opacity: 0, y: -5 }}
               animate={{ opacity: 1, y: 0 }}
-              className="p-3.5 bg-red-50/80 border border-red-100 rounded-xl flex items-start gap-2.5 text-xs text-red-600 font-semibold shadow-xs"
+              className="p-4 bg-red-50/90 border border-red-100 rounded-xl flex flex-col gap-2 text-xs text-red-700 font-semibold shadow-xs"
             >
-              <AlertCircle size={16} className="shrink-0 mt-0.5 text-red-500" />
-              <span>{error}</span>
+              <div className="flex items-start gap-2.5">
+                <AlertCircle size={16} className="shrink-0 mt-0.5 text-red-500" />
+                <span>{error}</span>
+              </div>
+              {error.includes('iframe') && (
+                <div className="mt-2 pt-2 border-t border-red-100 text-[11px] text-slate-600 font-normal leading-relaxed">
+                  💡 <strong className="font-bold text-red-800">Suggerimento per l'Anteprima:</strong> I browser moderni bloccano di default i cookie di terze parti dentro i pannelli incorporati (iframe). Per risolvere subito:
+                  <ul className="list-disc list-inside mt-1.5 space-y-1 font-medium text-slate-700 pl-1">
+                    <li>Fai clic su <strong className="text-[#2589F5]">Apri in una nuova scheda</strong> (l'icona con la freccia in alto a destra sopra l'anteprima).</li>
+                    <li>Oppure abilita i cookie di terze parti nelle impostazioni del tuo browser per questo sito.</li>
+                  </ul>
+                </div>
+              )}
             </motion.div>
           )}
 
