@@ -5,7 +5,6 @@ import NewEventModal from './components/NewEventModal';
 import EditEventModal from './components/EditEventModal';
 import ControlPanel from './components/ControlPanel';
 import ReportSection from './components/ReportSection';
-import LoginScreen from './components/LoginScreen';
 
 // Firebase Imports
 import { collection, doc, setDoc, deleteDoc, getDocs, onSnapshot } from 'firebase/firestore';
@@ -107,7 +106,6 @@ function cleanFirestoreData<T extends object>(obj: T): T {
 }
 
 export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const [participantsMap, setParticipantsMap] = useState<Record<string, Participant[]>>({});
   const [logsMap, setLogsMap] = useState<Record<string, AttendanceLog[]>>({});
@@ -117,47 +115,7 @@ export default function App() {
   const [isNewEventModalOpen, setIsNewEventModalOpen] = useState(false);
   const [isEditEventModalOpen, setIsEditEventModalOpen] = useState(false);
 
-  // Check active JWT session on application boot
-  useEffect(() => {
-    const localToken = localStorage.getItem('token');
-    const headers: Record<string, string> = {};
-    if (localToken) {
-      headers['Authorization'] = `Bearer ${localToken}`;
-    }
 
-    fetch('/api/check-session', { headers })
-      .then(res => {
-        if (res.ok) {
-          return res.json();
-        }
-        throw new Error();
-      })
-      .then(data => {
-        if (data.authenticated) {
-          setIsAuthenticated(true);
-        } else {
-          setIsAuthenticated(false);
-        }
-      })
-      .catch(() => {
-        setIsAuthenticated(false);
-      });
-  }, []);
-
-  const handleLogout = async () => {
-    try {
-      const localToken = localStorage.getItem('token');
-      const headers: Record<string, string> = {};
-      if (localToken) {
-        headers['Authorization'] = `Bearer ${localToken}`;
-      }
-      await fetch('/api/logout', { method: 'POST', headers });
-    } catch (e) {
-      console.error('Logout error', e);
-    }
-    localStorage.removeItem('token');
-    setIsAuthenticated(false);
-  };
 
   // Admin deletion security state
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
@@ -576,22 +534,7 @@ export default function App() {
   const activeParticipants = selectedEventId ? (participantsMap[selectedEventId] || []) : [];
   const activeLogs = selectedEventId ? (logsMap[selectedEventId] || []) : [];
 
-  if (isAuthenticated === null) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center font-sans">
-        <div className="relative flex flex-col items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-emerald-600/20 text-emerald-500 flex items-center justify-center border border-emerald-500/20 animate-spin">
-            <RefreshCw size={24} />
-          </div>
-          <span className="text-[10px] text-slate-500 font-black uppercase tracking-widest animate-pulse">SmartGate Sicurezza...</span>
-        </div>
-      </div>
-    );
-  }
 
-  if (!isAuthenticated) {
-    return <LoginScreen onLoginSuccess={() => setIsAuthenticated(true)} />;
-  }
 
   return (
     <div className="min-h-screen bg-[#F4F7FB] text-[#1E293B] font-sans flex flex-col">
@@ -617,14 +560,7 @@ export default function App() {
             </div>
           )}
 
-          <button
-            onClick={handleLogout}
-            className="inline-flex items-center gap-1.5 px-4.5 py-2 border border-slate-200/80 hover:border-[#2589F5] hover:bg-[#E8F3FF]/40 rounded-full text-xs font-semibold text-[#64748B] hover:text-[#2589F5] cursor-pointer transition-all"
-            title="Disconnetti in modo sicuro"
-          >
-            <LogOut size={14} />
-            <span className="hidden sm:inline">Esci</span>
-          </button>
+
         </div>
       </header>
 
