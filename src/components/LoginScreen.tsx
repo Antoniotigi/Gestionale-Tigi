@@ -30,7 +30,16 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
         body: JSON.stringify({ username, password })
       });
 
-      const data = await response.json();
+      const contentType = response.headers.get('content-type');
+      let data: any = {};
+      
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        console.error('Non-JSON response from server:', text);
+        throw new Error('Il servizio non è disponibile o la configurazione del server è errata. Riprova più tardi.');
+      }
 
       if (!response.ok) {
         throw new Error(data.error || 'Errore durante l\'autenticazione.');

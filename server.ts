@@ -23,29 +23,62 @@ app.use(express.json({ limit: '10mb' }));
 const AUTH_STORE_PATH = path.join(process.cwd(), 'auth-store.json');
 const JWT_SECRET = process.env.JWT_SECRET || 'tigicongress-super-secret-key-production-ready-2026';
 
+// In-memory fallback in case of read-only filesystem
+let inMemoryStore: any = null;
+
 function initAuthStore() {
-  if (!fs.existsSync(AUTH_STORE_PATH)) {
-    const salt = bcrypt.genSaltSync(10);
-    // Hash password "Mappescio2026@" with 10 salt rounds (Industry standard production protection)
-    const passwordHash = bcrypt.hashSync('Mappescio2026@', salt);
-    const initialStore = {
-      username: 'tigicongress',
-      passwordHash,
-      mfaSecret: null,
-      mfaEnabled: false
-    };
-    fs.writeFileSync(AUTH_STORE_PATH, JSON.stringify(initialStore, null, 2), 'utf-8');
-    console.log('[Auth Store] Inizializzato credenziali predefinite in modo sicuro per "tigicongress".');
+  const salt = bcrypt.genSaltSync(10);
+  const passwordHash = bcrypt.hashSync('Mappescio2026@', salt);
+  const defaultStore = {
+    username: 'tigicongress',
+    passwordHash,
+    mfaSecret: null,
+    mfaEnabled: false
+  };
+
+  try {
+    if (!fs.existsSync(AUTH_STORE_PATH)) {
+      fs.writeFileSync(AUTH_STORE_PATH, JSON.stringify(defaultStore, null, 2), 'utf-8');
+      console.log('[Auth Store] Inizializzato credenziali predefinite su file.');
+    }
+  } catch (err) {
+    console.warn('[Auth Store] File system non scrivibile. Utilizzo in-memory fallback.', err);
+    inMemoryStore = defaultStore;
   }
 }
 initAuthStore();
 
 function getAuthStore() {
-  return JSON.parse(fs.readFileSync(AUTH_STORE_PATH, 'utf-8'));
+  if (inMemoryStore) return inMemoryStore;
+  try {
+    return JSON.parse(fs.readFileSync(AUTH_STORE_PATH, 'utf-8'));
+  } catch (err) {
+    console.warn('[Auth Store] Errore di lettura file. Uso in-memory fallback.', err);
+    if (!inMemoryStore) {
+      const salt = bcrypt.genSaltSync(10);
+      const passwordHash = bcrypt.hashSync('Mappescio2026@', salt);
+      inMemoryStore = {
+        username: 'tigicongress',
+        passwordHash,
+        mfaSecret: null,
+        mfaEnabled: false
+      };
+    }
+    return inMemoryStore;
+  }
 }
 
 function updateAuthStore(data: any) {
-  fs.writeFileSync(AUTH_STORE_PATH, JSON.stringify(data, null, 2), 'utf-8');
+  if (inMemoryStore) {
+    inMemoryStore = data;
+    return;
+  }
+  try {
+    fs.writeFileSync(AUTH_STORE_PATH, JSON.stringify(data, null, 2), 'utf-8');
+  } catch (err) {
+    console.warn('[Auth Store] Errore di scrittura file durante aggiornamento. Uso in-memory fallback.', err);
+    inMemoryStore = data;
+  }
 }
 
 // ----------------- SECURITY & RATE LIMITING MIDDLEWARE -----------------
@@ -404,7 +437,9 @@ app.post('/api/logout', (req, res) => {
 
 // Serve Vite static/assets
 async function startServer() {
-  if (process.env.NODE_ENV !== 'production') {
+  const isProduction = process.env.NODE_ENV === 'production' || (typeof __filename !== 'undefined' && __filename.endsWith('.cjs')) || !fs.existsSync(path.join(process.cwd(), 'server.ts'));
+  
+  if (!isProduction) {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
